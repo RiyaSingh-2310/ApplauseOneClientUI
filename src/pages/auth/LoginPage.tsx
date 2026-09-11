@@ -1,0 +1,109 @@
+import { Check } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
+import { LoginForm } from '@/components/auth/LoginForm'
+import { useAuth } from '@/hooks/useAuth'
+import { useMotionConfig } from '@/lib/motion'
+
+const welcomePoints = [
+  'Access available surveys',
+  'Track your rewards and earnings',
+  'Update your profile anytime',
+]
+
+export function LoginPage() {
+  const { user, ready } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { duration } = useMotionConfig()
+  const view = location.pathname === '/forgot-password' ? 'forgot' : 'login'
+  const from = (location.state as { from?: string } | null)?.from
+
+  if (!ready) return null
+  if (user) return <Navigate to="/panelist/dashboard" replace />
+
+  function showLogin() {
+    navigate('/login', { replace: location.pathname === '/forgot-password', state: { from } })
+  }
+
+  return (
+    <div className="px-4 py-10 sm:px-6 lg:px-8">
+      <motion.div
+        className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border border-line bg-white shadow-lift lg:grid-cols-[0.92fr_1.08fr]"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration }}
+      >
+        <aside className="relative hidden overflow-hidden bg-teal-deep p-8 text-white lg:flex lg:flex-col lg:justify-center lg:p-10">
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div className="absolute -left-10 top-10 size-40 rounded-full bg-teal/50 blur-3xl" />
+            <div className="absolute right-0 bottom-0 size-48 rounded-full bg-gold/20 blur-3xl" />
+          </div>
+          <div className="relative">
+            <p className="font-display text-4xl leading-tight">Welcome Back</p>
+            <p className="mt-4 max-w-sm text-sm leading-7 text-white/80">
+              Log in to access your surveys, rewards, and member account in one place.
+            </p>
+            <ul className="mt-8 space-y-3">
+              {welcomePoints.map((item) => (
+                <li key={item} className="flex items-center gap-3 text-sm text-white/90">
+                  <span className="grid size-7 place-items-center rounded-full bg-white/15">
+                    <Check className="size-4" />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+        <div className="p-6 sm:p-10">
+          <div className="mb-8 lg:hidden">
+            <p className="font-display text-3xl text-ink">Welcome Back</p>
+            <p className="mt-2 text-sm text-ink-soft">Log in to access your surveys, rewards, and member account.</p>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration }}
+            >
+              {view === 'forgot' ? (
+                <>
+                  <h2 id="member-login-title" className="font-display text-3xl text-ink sm:text-4xl">
+                    Forgot Password?
+                  </h2>
+                  <p className="mt-2 text-sm text-ink-soft">Enter the email on your member account.</p>
+                  <div className="mt-8">
+                    <ForgotPasswordForm onBack={showLogin} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h1 id="member-login-title" className="font-display text-3xl text-ink sm:text-4xl">
+                    Member Login
+                  </h1>
+                  <p className="mt-2 text-sm text-ink-soft">Please enter your account details below.</p>
+                  <div className="mt-8">
+                    <LoginForm
+                      redirectTo={from}
+                      onForgot={() => navigate('/forgot-password', { state: { from } })}
+                    />
+                  </div>
+                  <p className="mt-6 text-center text-sm text-ink-soft">
+                    Don’t have an account?{' '}
+                    <Link to="/join" className="font-medium text-teal hover:underline">
+                      Join Now
+                    </Link>
+                  </p>
+                </>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
