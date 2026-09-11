@@ -200,7 +200,7 @@ export function HelpPage() {
                 />
               ))}
             </div>
-            <div className="mx-auto mt-12 max-w-2xl rounded-[1.7rem] border border-line bg-white p-6 shadow-card sm:p-8">
+            <div className="mx-auto mt-12 rounded-[1.7rem] border border-line bg-white p-6 shadow-card sm:p-8">
               <h3 className="text-center font-display text-2xl text-ink">Send us a Message</h3>
               <p className="mt-2 text-center text-sm text-ink-soft">
                 Fill out the form below and we’ll get back to you as soon as possible.
