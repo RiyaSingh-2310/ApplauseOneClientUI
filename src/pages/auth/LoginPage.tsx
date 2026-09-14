@@ -23,7 +23,7 @@ export function LoginPage() {
   const resetToken = params.get('token') ?? ''
 
   if (!ready) return null
-  if (user) return <Navigate to="/panelist/dashboard" replace />
+  if (user) return <Navigate to="/dashboard" replace />
 
   function showLogin() {
     navigate('/login', { replace: location.pathname !== '/login', state: { from } })

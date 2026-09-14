@@ -13,6 +13,7 @@ export function RewardCategorySection({
   comingSoonSlots = 0,
   redeemTo,
   featuredId,
+  onRedeem,
 }: {
   title: string
   description: string
@@ -20,6 +21,7 @@ export function RewardCategorySection({
   comingSoonSlots?: number
   redeemTo: string
   featuredId?: string
+  onRedeem?: (reward: RewardOption) => void
 }) {
   const slots = Array.from({ length: comingSoonSlots }, (_, index) => index)
 
@@ -52,9 +54,15 @@ export function RewardCategorySection({
               featured={featured}
               action={
                 availability === 'available' ? (
-                  <Button asChild className="w-full">
-                    <Link to={redeemTo}>Redeem</Link>
-                  </Button>
+                  onRedeem ? (
+                    <Button type="button" className="w-full" onClick={() => onRedeem(reward)}>
+                      Redeem
+                    </Button>
+                  ) : (
+                    <Button asChild className="w-full">
+                      <Link to={redeemTo}>Redeem</Link>
+                    </Button>
+                  )
                 ) : (
                   <Button type="button" variant="outline" className="w-full" disabled>
                     Coming soon

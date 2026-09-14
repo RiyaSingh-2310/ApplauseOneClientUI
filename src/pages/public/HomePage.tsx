@@ -68,7 +68,7 @@ export function HomePage() {
                 size="lg"
                 variant="ghost"
                 type="button"
-                onClick={() => navigate(user ? '/panelist/dashboard' : '/login')}
+                onClick={() => navigate(user ? '/dashboard' : '/login')}
               >
                 Login
               </Button>

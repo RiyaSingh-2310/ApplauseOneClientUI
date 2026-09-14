@@ -22,7 +22,7 @@ export function LoginForm({
   const { login, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = redirectTo || (location.state as { from?: string } | null)?.from || '/panelist/dashboard'
+  const from = redirectTo || (location.state as { from?: string } | null)?.from || '/dashboard'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)

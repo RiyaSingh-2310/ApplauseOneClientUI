@@ -26,6 +26,6 @@ export function ProtectedRoute() {
 export function GuestRoute() {
   const { user, ready } = useAuth()
   if (!ready) return <AuthBoot />
-  if (user) return <Navigate to="/panelist/dashboard" replace />
+  if (user) return <Navigate to="/dashboard" replace />
   return <Outlet />
 }

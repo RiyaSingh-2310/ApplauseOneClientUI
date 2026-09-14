@@ -51,10 +51,19 @@ export const joinTrust = [
 ] as const
 
 export const publicNav = [
-  { to: '/', label: 'Home' },
+  { to: '/', label: 'Home', end: true },
   { to: '/how-it-works', label: 'How It Works' },
   { to: '/rewards', label: 'Rewards' },
   { to: '/help', label: 'Help' },
+  { to: '/about', label: 'About Us' },
+  { to: '/contact', label: 'Contact' },
+] as const
+
+export const memberNav = [
+  { to: '/dashboard', label: 'Dashboard', end: true },
+  { to: '/', label: 'Home', end: true },
+  { to: '/rewards', label: 'Rewards' },
+  { to: '/history', label: 'History' },
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
 ] as const

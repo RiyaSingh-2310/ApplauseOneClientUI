@@ -104,12 +104,6 @@ body {
     linear-gradient(180deg, #fbf8f1 0%, #f3eee3 100%);
 }
 
-.portal-canvas {
-  background:
-    radial-gradient(circle at 100% 0%, rgb(15 110 106 / 0.06), transparent 28%),
-    #f4f1ea;
-}
-
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

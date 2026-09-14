@@ -131,12 +131,12 @@ export function JoinPage() {
     [],
   )
 
-  if (user && !success) return <Navigate to="/panelist/dashboard" replace />
+  if (user && !success) return <Navigate to="/dashboard" replace />
   if (success) {
     return (
       <RegistrationSuccess
         needsVerification={needsVerification}
-        onContinue={() => navigate('/panelist/dashboard')}
+        onContinue={() => navigate('/dashboard')}
       />
     )
   }

@@ -14,6 +14,12 @@ export function VerifyPage() {
   const [error, setError] = useState(!token)
 
   useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, navigate])
+
+  useEffect(() => {
     if (!token || user) return
     let cancelled = false
     authService
@@ -21,7 +27,7 @@ export function VerifyPage() {
       .then((session) => {
         if (cancelled) return
         completeSession(session.token, session.user, true)
-        navigate('/panelist/dashboard', { replace: true })
+        navigate('/dashboard', { replace: true })
       })
       .catch((err) => {
         if (cancelled) return

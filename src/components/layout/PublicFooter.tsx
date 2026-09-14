@@ -52,8 +52,8 @@ export function PublicFooter() {
                 <li key={link.label}>
                   {link.to === 'login' ? (
                     user ? (
-                      <Link to="/panelist/dashboard" className="text-sm text-cream/75 transition-colors hover:text-white">
-                        {link.label}
+                      <Link to="/dashboard" className="text-sm text-cream/75 transition-colors hover:text-white">
+                        Dashboard
                       </Link>
                     ) : (
                       <Link to="/login" className="text-sm text-cream/75 transition-colors hover:text-white">

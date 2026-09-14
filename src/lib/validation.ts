@@ -52,6 +52,17 @@ export function validateOnboardingQuestions(
   return errors
 }
 
+export function validateNewPassword(password: string, confirmPassword: string) {
+  const errors: Record<string, string> = {}
+  if (password.length < 8) errors.password = 'Use at least 8 characters.'
+  else if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    errors.password = 'Include a letter and a number.'
+  }
+  if (!confirmPassword) errors.confirmPassword = 'Confirm your password.'
+  else if (confirmPassword !== password) errors.confirmPassword = 'Passwords do not match.'
+  return errors
+}
+
 export function validateRegisterStep(
   form: RegisterPayload,
   step: number,
@@ -69,12 +80,7 @@ export function validateRegisterStep(
     if (form.zipCode.trim() && !ZIP_PATTERN.test(form.zipCode.trim())) {
       errors.zipCode = 'Enter a valid ZIP or postal code.'
     }
-    if (form.password.length < 8) errors.password = 'Use at least 8 characters.'
-    else if (!/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password)) {
-      errors.password = 'Include a letter and a number.'
-    }
-    if (!form.confirmPassword) errors.confirmPassword = 'Confirm your password.'
-    else if (form.confirmPassword !== form.password) errors.confirmPassword = 'Passwords do not match.'
+    Object.assign(errors, validateNewPassword(form.password, form.confirmPassword))
   }
 
   if (step === 1 || step === 2 || step === 3) {

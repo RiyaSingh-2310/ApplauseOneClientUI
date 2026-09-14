@@ -52,6 +52,16 @@ export const authService = {
       auth: false,
     })
   },
+  changePassword(payload: { currentPassword: string; password: string }) {
+    return apiRequest<unknown>('/auth/change-password', {
+      method: 'POST',
+      body: {
+        current_password: payload.currentPassword,
+        password: payload.password,
+        password_confirmation: payload.password,
+      },
+    })
+  },
   logout() {
     return apiRequest<unknown>('/auth/logout', { method: 'POST' })
   },

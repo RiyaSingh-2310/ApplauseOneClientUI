@@ -12,24 +12,40 @@ import type { AssignedProject } from '@/types/project'
 export function ProjectsPage() {
   const { data, loading, error, reload } = useAsync(() => projectService.getAssigned({ sort: 'assignedAt:desc' }))
 
-  if (loading) return <LoadingSkeleton rows={4} />
-  if (error) return <ErrorState message={error} onRetry={reload} />
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+        <LoadingSkeleton rows={4} />
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+        <ErrorState message={error} onRetry={reload} />
+      </div>
+    )
+  }
 
   const items = data?.items ?? []
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-4xl text-ink">Assigned projects</h1>
-        <p className="mt-2 max-w-2xl text-ink-soft">
-          Every study assigned to you lives here, newest first. Open a survey from the portal instead of waiting on email.
-        </p>
-      </div>
+    <div>
+      <section className="hero-grid px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-xs font-semibold tracking-[0.18em] text-teal uppercase">Your studies</p>
+          <h1 className="font-display mt-3 text-4xl text-ink sm:text-5xl">Surveys</h1>
+          <p className="mt-4 max-w-2xl text-base leading-8 text-ink-soft">
+            Every study assigned to you lives here. Open a survey when you are ready — no need to wait on email.
+          </p>
+        </div>
+      </section>
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
 
       {items.length === 0 ? (
         <EmptyState
-          title="No projects assigned yet."
-          description="Assigned studies will appear here when the panel provides them for your profile."
+            title="No surveys assigned yet."
+            description="Assigned studies will appear here when they are matched to your profile."
         />
       ) : (
         <div className="space-y-4">
@@ -63,7 +79,7 @@ export function ProjectsPage() {
                     <div className="min-w-0">
                       <dt className="text-xs text-muted">Survey</dt>
                       <dd className="mt-1 truncate font-medium text-teal">
-                        {project.surveyUrl ? 'Ready in portal' : 'Link not provided'}
+                        {project.surveyUrl ? 'Ready to start' : 'Link not provided'}
                       </dd>
                     </div>
                   </dl>
@@ -74,6 +90,7 @@ export function ProjectsPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }
