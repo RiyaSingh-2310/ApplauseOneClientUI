@@ -6,6 +6,7 @@ import { ScrollToTop } from '@/components/shared/ScrollToTop'
 import { AuthProvider } from '@/context/AuthContext'
 import { JoinPage } from '@/pages/auth/JoinPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import { VerifyPage } from '@/pages/auth/VerifyPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { DashboardPage } from '@/pages/panelist/DashboardPage'
 import { ProfilePage } from '@/pages/panelist/ProfilePage'
@@ -34,9 +35,11 @@ export default function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/join" element={<JoinPage />} />
+            <Route path="/verify" element={<VerifyPage />} />
             <Route element={<GuestRoute />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/forgot-password" element={<LoginPage />} />
+              <Route path="/reset-password" element={<LoginPage />} />
             </Route>
           </Route>
 

@@ -29,8 +29,9 @@ export function RewardCard({
   className?: string
 }) {
   const availability = getRewardAvailability(reward)
-  const popular = (popularRewardIds as readonly string[]).includes(reward.id)
+  const popular = reward.popular || (popularRewardIds as readonly string[]).includes(reward.id)
   const redeemable = availability === 'available'
+  const Icon = reward.icon
 
   return (
     <article
@@ -47,7 +48,7 @@ export function RewardCard({
           className="grid size-14 place-items-center rounded-2xl text-sm font-semibold text-white shadow-soft"
           style={{ backgroundColor: reward.accent }}
         >
-          {reward.logoLabel}
+          {Icon ? <Icon className="size-7" strokeWidth={1.75} /> : reward.logoLabel}
         </span>
         <div className="flex flex-wrap justify-end gap-2">
           {popular ? (

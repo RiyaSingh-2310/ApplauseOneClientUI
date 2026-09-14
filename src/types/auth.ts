@@ -1,9 +1,6 @@
-export interface AuthUser {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-}
+import type { Panelist } from './api'
+
+export type AuthUser = Panelist
 
 export interface LoginPayload {
   email: string
@@ -20,6 +17,11 @@ export interface ForgotPasswordPayload {
   email: string
 }
 
+export interface ResetPasswordPayload {
+  token: string
+  password: string
+}
+
 export interface RegisterAccount {
   email: string
   password: string
@@ -33,26 +35,8 @@ export interface RegisterPersonal {
   zipCode: string
 }
 
-export interface RegisterDemographics {
-  ageRange: string
-  gender: string
-  householdIncome: string
-  educationLevel: string
-  employmentStatus: string
-  householdSize: string
-}
-
-export interface RegisterLifestyle {
-  shoppingMethod: string
-  monthlyBudget: string
-  primaryDevice: string
-  shoppingInterests: string[]
-}
-
-export interface RegisterPreferences {
-  surveyTime: string
-  surveyFrequency: string
-  motivation: string
+export interface RegisterPayload extends RegisterAccount, RegisterPersonal {
+  answers: Record<string, string | string[]>
   emailInvitations: boolean
   opportunityUpdates: boolean
   earningTips: boolean
@@ -60,9 +44,6 @@ export interface RegisterPreferences {
   acceptPrivacy: boolean
 }
 
-export interface RegisterPayload
-  extends RegisterAccount,
-    RegisterPersonal,
-    RegisterDemographics,
-    RegisterLifestyle,
-    RegisterPreferences {}
+export type RegisterOutcome =
+  | { status: 'authenticated' }
+  | { status: 'verification_required'; message: string }

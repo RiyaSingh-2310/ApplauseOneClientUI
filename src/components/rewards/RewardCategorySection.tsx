@@ -35,7 +35,11 @@ export function RewardCategorySection({
       <div
         className={cn(
           'mt-10 grid gap-5',
-          rewards.length + slots.length === 1 ? 'sm:grid-cols-1 md:max-w-md md:mx-auto' : 'sm:grid-cols-2 xl:grid-cols-3',
+          rewards.length + slots.length === 1
+            ? 'sm:grid-cols-1 md:max-w-md md:mx-auto'
+            : rewards.length + slots.length === 3
+              ? 'sm:grid-cols-2 lg:grid-cols-3'
+              : 'sm:grid-cols-2 xl:grid-cols-3',
         )}
       >
         {rewards.map((reward) => {

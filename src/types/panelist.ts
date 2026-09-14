@@ -1,28 +1,4 @@
-export interface PanelistProfile {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  zipCode: string
-  ageRange: string
-  gender: string
-  householdIncome: string
-  educationLevel: string
-  employmentStatus: string
-  householdSize: string
-  shoppingMethod: string
-  monthlyBudget: string
-  primaryDevice: string
-  shoppingInterests: string[]
-  surveyTime: string
-  surveyFrequency: string
-  motivation: string
-  emailInvitations: boolean
-  opportunityUpdates: boolean
-  earningTips: boolean
-  memberSince: string
-}
+import type { OnboardingAnswer, OnboardingStepGroup, Panelist } from './api'
 
 export interface DashboardSummary {
   availablePoints: number
@@ -41,15 +17,13 @@ export interface ActivityItem {
   kind: 'project' | 'reward' | 'points' | 'profile'
 }
 
+export interface ProfilePageData {
+  user: Panelist
+  steps: OnboardingStepGroup[]
+  answers: OnboardingAnswer[]
+}
+
 export interface ProfileUpdatePayload {
+  name?: string
   phone?: string
-  zipCode?: string
-  surveyTime?: string
-  surveyFrequency?: string
-  motivation?: string
-  emailInvitations?: boolean
-  opportunityUpdates?: boolean
-  earningTips?: boolean
-  shoppingInterests?: string[]
-  primaryDevice?: string
 }

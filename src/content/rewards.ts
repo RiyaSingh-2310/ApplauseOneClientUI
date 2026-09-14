@@ -1,4 +1,6 @@
+import { Banknote, Landmark } from 'lucide-react'
 import type { RewardCategory } from '@/types/common'
+import type { RewardOption } from '@/types/reward'
 
 export const categoryLabels: Record<RewardCategory, string> = {
   cash: 'Instant Cash',
@@ -6,6 +8,44 @@ export const categoryLabels: Record<RewardCategory, string> = {
   digital: 'Digital Rewards',
   charity: 'Charity',
 }
+
+export const instantCashRewards: Array<Omit<RewardOption, 'pointsRequired' | 'estimatedValueLabel'>> = [
+  {
+    id: 'rwd_paypal',
+    name: 'PayPal Cash',
+    category: 'cash',
+    description: 'Instant transfer to your PayPal account once the request is approved.',
+    delivery: 'Usually within minutes',
+    available: true,
+    accent: '#113f6d',
+    logoLabel: 'PP',
+    paymentMethod: 'Paypal',
+  },
+  {
+    id: 'rwd_bank_transfer',
+    name: 'Bank Transfer',
+    category: 'cash',
+    description: 'Receive your rewards as a direct deposit to your bank account after approval.',
+    delivery: 'Usually within minutes',
+    available: true,
+    accent: '#113f6d',
+    logoLabel: 'BT',
+    icon: Landmark,
+    paymentMethod: 'Cash',
+  },
+  {
+    id: 'rwd_cash_reward',
+    name: 'Cash Reward',
+    category: 'cash',
+    description: 'Redeem your points for a cash payout once the request is reviewed.',
+    delivery: 'Usually within minutes',
+    available: true,
+    accent: '#113f6d',
+    logoLabel: 'CR',
+    icon: Banknote,
+    paymentMethod: 'Cash',
+  },
+]
 
 export const rewardsHero = {
   eyebrow: 'Rewards Catalog',
@@ -22,8 +62,8 @@ export const rewardShowcase = [
     title: 'Instant Cash',
     description: 'Get paid to your account once a request is approved.',
     category: 'cash' as const,
-    ids: ['rwd_paypal'],
-    comingSoonSlots: 2,
+    ids: ['rwd_paypal', 'rwd_bank_transfer', 'rwd_cash_reward'],
+    comingSoonSlots: 0,
   },
   {
     id: 'gift-cards',

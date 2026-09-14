@@ -5,9 +5,10 @@ import { categoryLabels } from '@/content/rewards'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Field } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { useAsync } from '@/hooks/useAsync'
-import { formatNumber } from '@/lib/utils'
-import { panelistService } from '@/services/panelist.service'
+import { asNumber, cn, formatNumber } from '@/lib/utils'
 import { rewardService } from '@/services/reward.service'
 import { ApiRequestError } from '@/services/errors'
 import type { RewardCategory } from '@/types/common'
@@ -22,10 +23,10 @@ const filters: Array<{ id: 'all' | RewardCategory; label: string }> = [
 ]
 
 export function PanelistRewardsPage() {
-  const catalog = useAsync(() => rewardService.getCatalog())
-  const dashboard = useAsync(() => panelistService.getDashboard())
+  const catalog = useAsync(() => rewardService.getMemberCatalog())
   const [filter, setFilter] = useState<(typeof filters)[number]['id']>('all')
   const [selected, setSelected] = useState<RewardOption | null>(null)
+  const [redeemPoints, setRedeemPoints] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -36,7 +37,7 @@ export function PanelistRewardsPage() {
     return list.filter((item) => item.category === filter)
   }, [catalog.data, filter])
 
-  const points = dashboard.data?.summary.availablePoints ?? 0
+  const points = catalog.data?.balancePoint ?? 0
   const minimum = catalog.data?.guide.minimumRedemption ?? 0
 
   async function confirmRedeem() {
@@ -44,11 +45,16 @@ export function PanelistRewardsPage() {
     setSubmitting(true)
     setErrorMessage('')
     try {
-      await rewardService.redeem({ rewardId: selected.id })
+      await rewardService.redeem({
+        rewardId: selected.id,
+        rewardName: selected.name,
+        rewardPoints: asNumber(redeemPoints),
+        paymentMethod: selected.paymentMethod,
+        remark: selected.name,
+      })
       setMessage(`${selected.name} request submitted.`)
       setSelected(null)
       catalog.reload()
-      dashboard.reload()
     } catch (error) {
       setErrorMessage(error instanceof ApiRequestError ? error.message : 'Unable to submit this request.')
     } finally {
@@ -56,8 +62,13 @@ export function PanelistRewardsPage() {
     }
   }
 
-  if (catalog.loading || dashboard.loading) return <LoadingSkeleton rows={4} />
+  if (catalog.loading) return <LoadingSkeleton rows={4} />
   if (catalog.error) return <ErrorState message="Unable to load rewards. Please try again." onRetry={catalog.reload} />
+
+  const remaining = points - asNumber(redeemPoints)
+  const canRedeem = selected
+    ? asNumber(redeemPoints) >= minimum && asNumber(redeemPoints) <= points && points >= minimum
+    : false
 
   return (
     <div className="space-y-6">
@@ -105,7 +116,12 @@ export function PanelistRewardsPage() {
       {items.length === 0 ? (
         <EmptyState title="No rewards in this category yet." />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div
+          className={cn(
+            'grid gap-5',
+            items.length === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-3',
+          )}
+        >
           {items.map((reward) => (
             <RewardCard
               key={reward.id}
@@ -113,17 +129,14 @@ export function PanelistRewardsPage() {
               action={
                 <Button
                   className="w-full"
-                  disabled={!reward.available || points < reward.pointsRequired}
+                  disabled={!reward.available || points < minimum}
                   onClick={() => {
                     setErrorMessage('')
                     setSelected(reward)
+                    setRedeemPoints(Math.max(minimum, reward.pointsRequired))
                   }}
                 >
-                  {!reward.available
-                    ? 'Unavailable'
-                    : points < reward.pointsRequired
-                      ? 'Not enough points'
-                      : 'Redeem'}
+                  {!reward.available ? 'Unavailable' : points < minimum ? 'Not enough points' : 'Redeem'}
                 </Button>
               }
             />
@@ -142,24 +155,32 @@ export function PanelistRewardsPage() {
             </p>
           ) : null}
           {selected ? (
-            <dl className="grid gap-3 rounded-2xl border border-line bg-white px-4 py-4 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Reward</dt>
-                <dd className="font-medium text-ink">{selected.name}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Points required</dt>
-                <dd className="font-medium text-ink">{formatNumber(selected.pointsRequired)}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Current balance</dt>
-                <dd className="font-medium text-ink">{formatNumber(points)}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Remaining balance</dt>
-                <dd className="font-medium text-ink">{formatNumber(points - selected.pointsRequired)}</dd>
-              </div>
-            </dl>
+            <div className="grid gap-4">
+              <dl className="grid gap-3 rounded-2xl border border-line bg-white px-4 py-4 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Reward</dt>
+                  <dd className="font-medium text-ink">{selected.name}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Current balance</dt>
+                  <dd className="font-medium text-ink">{formatNumber(points)}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Remaining balance</dt>
+                  <dd className="font-medium text-ink">{formatNumber(remaining)}</dd>
+                </div>
+              </dl>
+              <Field label="Points to redeem" htmlFor="redeem-points" hint={`Minimum ${formatNumber(minimum)} points.`}>
+                <Input
+                  id="redeem-points"
+                  type="number"
+                  min={minimum}
+                  max={points}
+                  value={redeemPoints}
+                  onChange={(event) => setRedeemPoints(asNumber(event.target.value))}
+                />
+              </Field>
+            </div>
           ) : null}
           <p className="mt-4 text-sm leading-6 text-ink-soft">
             This creates a pending request. You can track status under Reward Requests.
@@ -168,7 +189,7 @@ export function PanelistRewardsPage() {
             <Button variant="outline" onClick={() => setSelected(null)}>
               Cancel
             </Button>
-            <Button onClick={confirmRedeem} disabled={submitting}>
+            <Button onClick={() => void confirmRedeem()} disabled={submitting || !canRedeem}>
               {submitting ? 'Submitting…' : 'Confirm Redemption'}
             </Button>
           </div>

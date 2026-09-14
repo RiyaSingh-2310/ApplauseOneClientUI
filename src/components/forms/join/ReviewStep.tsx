@@ -1,16 +1,5 @@
-import {
-  ageRanges,
-  educationOptions,
-  employmentOptions,
-  genderOptions,
-  householdSizeOptions,
-  incomeOptions,
-  interestOptions,
-  optionLabel,
-  shoppingMethods,
-  surveyFrequencyOptions,
-  surveyTimeOptions,
-} from '@/content/options'
+import { flattenQuestions, optionLabelById } from '@/lib/apiMap'
+import type { OnboardingStepGroup } from '@/types/api'
 import type { RegisterPayload } from '@/types/auth'
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -22,11 +11,8 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function ReviewStep({ form }: { form: RegisterPayload }) {
-  const interests = form.shoppingInterests
-    .map((value) => optionLabel(interestOptions, value))
-    .join(', ')
-  const ageOptions = ageRanges.map((value) => ({ value, label: value }))
+export function ReviewStep({ form, steps }: { form: RegisterPayload; steps: OnboardingStepGroup[] }) {
+  const questions = flattenQuestions(steps).filter((question) => question.step_no !== 5)
 
   return (
     <div className="mt-6">
@@ -37,17 +23,16 @@ export function ReviewStep({ form }: { form: RegisterPayload }) {
         <Row label="Name" value={`${form.firstName} ${form.lastName}`.trim()} />
         <Row label="Email" value={form.email} />
         <Row label="Phone" value={form.phone} />
-        <Row label="ZIP / postal code" value={form.zipCode} />
-        <Row label="Age range" value={optionLabel(ageOptions, form.ageRange)} />
-        <Row label="Gender" value={optionLabel(genderOptions, form.gender)} />
-        <Row label="Household income" value={optionLabel(incomeOptions, form.householdIncome)} />
-        <Row label="Household size" value={optionLabel(householdSizeOptions, form.householdSize)} />
-        <Row label="Education" value={optionLabel(educationOptions, form.educationLevel)} />
-        <Row label="Employment" value={optionLabel(employmentOptions, form.employmentStatus)} />
-        <Row label="Shopping method" value={optionLabel(shoppingMethods, form.shoppingMethod)} />
-        <Row label="Survey time" value={optionLabel(surveyTimeOptions, form.surveyTime)} />
-        <Row label="Survey frequency" value={optionLabel(surveyFrequencyOptions, form.surveyFrequency)} />
-        <Row label="Shopping interests" value={interests} />
+        {form.zipCode ? <Row label="ZIP / postal code" value={form.zipCode} /> : null}
+        {questions.map((question) => {
+          const value = form.answers[String(question.id)]
+          const display = Array.isArray(value)
+            ? value.map((id) => optionLabelById(question.options, id)).join(', ')
+            : value
+              ? optionLabelById(question.options, value)
+              : ''
+          return <Row key={question.id} label={question.question_text} value={display} />
+        })}
         <Row
           label="Consents"
           value={[form.acceptTerms && 'Terms', form.acceptPrivacy && 'Privacy'].filter(Boolean).join(' · ') || 'Incomplete'}

@@ -59,8 +59,8 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
           variant="ghost"
           className="w-full justify-start"
           onClick={() => {
-            logout()
             navigate('/')
+            void logout()
           }}
         >
           <LogOut className="size-4" />
@@ -102,13 +102,11 @@ export function PortalLayout() {
           </div>
           <div className="flex min-w-0 items-center gap-3">
             <div className="min-w-0 text-right">
-              <p className="truncate text-sm font-medium text-ink">
-                {user?.firstName} {user?.lastName}
-              </p>
+              <p className="truncate text-sm font-medium text-ink">{user?.name}</p>
               <p className="truncate text-xs text-muted">{user?.email}</p>
             </div>
             <div className="grid size-10 shrink-0 place-items-center rounded-full bg-teal text-xs font-semibold text-white">
-              {user ? initials(user.firstName, user.lastName) : 'AO'}
+              {user ? initials(user.name) : 'AO'}
             </div>
           </div>
         </header>

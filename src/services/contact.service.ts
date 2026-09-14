@@ -1,12 +1,14 @@
 import type { ContactPayload } from '@/types/contact'
-import { apiRequest } from './http'
+import { ApiRequestError } from './errors'
 
 export const contactService = {
   submit(payload: ContactPayload) {
-    return apiRequest<{ ok: boolean }>('/contact', {
-      method: 'POST',
-      body: payload,
-      auth: false,
-    })
+    void payload
+    return Promise.reject(
+      new ApiRequestError({
+        message:
+          'Online messaging is not available yet. Please email admin@arserviceco.com or call +60 3 2731 9315.',
+      }),
+    )
   },
 }

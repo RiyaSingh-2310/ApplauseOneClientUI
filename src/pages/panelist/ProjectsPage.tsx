@@ -29,7 +29,7 @@ export function ProjectsPage() {
       {items.length === 0 ? (
         <EmptyState
           title="No projects assigned yet."
-          description="When a research study matches your profile, it will appear at the top of this list."
+          description="Assigned studies will appear here when the panel provides them for your profile."
         />
       ) : (
         <div className="space-y-4">

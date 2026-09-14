@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import type { ProjectStatus, RewardRequestStatus } from '@/types/common'
+import type { ProjectStatus } from '@/types/common'
 
 const projectTone = {
   new: 'info',
@@ -9,13 +9,13 @@ const projectTone = {
   closed: 'muted',
 } as const
 
-const requestTone = {
+const requestTone: Record<string, 'warning' | 'info' | 'danger' | 'success' | 'default' | 'muted'> = {
   pending: 'warning',
   approved: 'info',
   rejected: 'danger',
   completed: 'success',
   posted: 'default',
-} as const
+}
 
 const labels: Record<string, string> = {
   new: 'New',
@@ -30,9 +30,9 @@ const labels: Record<string, string> = {
 }
 
 export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
-  return <Badge tone={projectTone[status]}>{labels[status]}</Badge>
+  return <Badge tone={projectTone[status]}>{labels[status] ?? status}</Badge>
 }
 
-export function RequestStatusBadge({ status }: { status: RewardRequestStatus | 'posted' }) {
-  return <Badge tone={requestTone[status]}>{labels[status]}</Badge>
+export function RequestStatusBadge({ status }: { status: string }) {
+  return <Badge tone={requestTone[status] ?? 'default'}>{labels[status] ?? status}</Badge>
 }

@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
 import { LoginForm } from '@/components/auth/LoginForm'
 import { useAuth } from '@/hooks/useAuth'
@@ -16,15 +16,17 @@ export function LoginPage() {
   const { user, ready } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { duration } = useMotionConfig()
-  const view = location.pathname === '/forgot-password' ? 'forgot' : 'login'
+  const view = location.pathname === '/forgot-password' || location.pathname === '/reset-password' ? 'forgot' : 'login'
   const from = (location.state as { from?: string } | null)?.from
+  const resetToken = params.get('token') ?? ''
 
   if (!ready) return null
   if (user) return <Navigate to="/panelist/dashboard" replace />
 
   function showLogin() {
-    navigate('/login', { replace: location.pathname === '/forgot-password', state: { from } })
+    navigate('/login', { replace: location.pathname !== '/login', state: { from } })
   }
 
   return (
@@ -75,9 +77,11 @@ export function LoginPage() {
                   <h2 id="member-login-title" className="font-display text-3xl text-ink sm:text-4xl">
                     Forgot Password?
                   </h2>
-                  <p className="mt-2 text-sm text-ink-soft">Enter the email on your member account.</p>
+                  <p className="mt-2 text-sm text-ink-soft">
+                    {resetToken ? 'Choose a new password for your member account.' : 'Enter the email on your member account.'}
+                  </p>
                   <div className="mt-8">
-                    <ForgotPasswordForm onBack={showLogin} />
+                    <ForgotPasswordForm onBack={showLogin} initialToken={resetToken} />
                   </div>
                 </>
               ) : (

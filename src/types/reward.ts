@@ -1,9 +1,5 @@
+import type { LucideIcon } from 'lucide-react'
 import type { RewardAvailability, RewardCategory, RewardRequestStatus, TransactionType } from './common'
-
-export interface RewardRedemptionRequirement {
-  pointsRequired: number
-  delivery: string
-}
 
 export interface RewardOption {
   id: string
@@ -14,14 +10,20 @@ export interface RewardOption {
   delivery: string
   available: boolean
   availability?: RewardAvailability
+  popular?: boolean
   accent: string
   logoLabel: string
   estimatedValueLabel: string
+  icon?: LucideIcon
+  paymentMethod?: string
 }
 
 export interface RedeemRewardPayload {
   rewardId: string
-  destinationNote?: string
+  rewardName: string
+  rewardPoints: number
+  paymentMethod?: string
+  remark?: string
 }
 
 export interface RewardRequest {

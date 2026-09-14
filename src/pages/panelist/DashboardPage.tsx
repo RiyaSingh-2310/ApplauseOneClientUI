@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
 import { useMotionConfig } from '@/lib/motion'
-import { formatDate, formatNumber } from '@/lib/utils'
+import { formatDate, formatNumber, givenName } from '@/lib/utils'
 import { panelistService } from '@/services/panelist.service'
 
 export function DashboardPage() {
@@ -23,7 +23,8 @@ export function DashboardPage() {
   if (!data) return <EmptyState title="Dashboard is unavailable right now." />
 
   const { summary, activity, latestProjects, pointsTrend } = data
-  const progress = Math.min(100, Math.round((summary.availablePoints / summary.nextRewardAt) * 100))
+  const progress = Math.min(100, Math.round((summary.availablePoints / summary.nextRewardAt) * 100) || 0)
+  const onboardingIncomplete = Boolean(user && !user.onboarding_completed_at)
 
   const cards = [
     { label: 'Available reward points', value: summary.availablePoints, suffix: 'Points' },
@@ -36,8 +37,17 @@ export function DashboardPage() {
     <div className="space-y-8">
       <div>
         <p className="text-sm text-muted">Welcome back</p>
-        <h1 className="font-display text-4xl text-ink">{user?.firstName}, your panel is ready.</h1>
+        <h1 className="font-display text-4xl text-ink">{givenName(user?.name)}, your panel is ready.</h1>
       </div>
+
+      {onboardingIncomplete ? (
+        <div className="rounded-2xl border border-gold/30 bg-gold-soft px-5 py-4 text-sm text-gold-deep">
+          Finish your profile so matching can use your latest answers.{' '}
+          <Link to="/panelist/profile" className="font-medium underline">
+            Complete profile
+          </Link>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card, index) => (
@@ -74,13 +84,17 @@ export function DashboardPage() {
             </div>
             <Progress className="mt-5" value={progress} />
             <div className="mt-8 h-40">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={pointsTrend}>
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6b7a88' }} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="points" stroke="#0f6e6a" fill="#e3f2f0" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
+              {pointsTrend.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={pointsTrend}>
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6b7a88' }} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="points" stroke="#0f6e6a" fill="#e3f2f0" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyState title="No point history yet." />
+              )}
             </div>
           </CardContent>
         </Card>

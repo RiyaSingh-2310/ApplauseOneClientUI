@@ -5,7 +5,7 @@ import { CtaSection } from '@/components/shared/CtaSection'
 import { FaqAccordion } from '@/components/shared/FaqAccordion'
 import { PageHero } from '@/components/shared/PageHero'
 import { SectionHeading } from '@/components/shared/SectionHeading'
-import { rewardShowcase, rewardsCta, rewardsFaqs, rewardsHero } from '@/content/rewards'
+import { instantCashRewards, rewardShowcase, rewardsCta, rewardsFaqs, rewardsHero } from '@/content/rewards'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
 import { formatNumber } from '@/lib/utils'
@@ -27,16 +27,10 @@ export function RewardsPage() {
 
   const cash = orderRewards(
     items.filter((item) => item.category === 'cash'),
-    rewardShowcase[0].ids,
+    instantCashRewards.map((item) => item.id),
   )
-  const giftCards = orderRewards(
-    items.filter((item) => item.category === 'gift-card' || item.category === 'digital'),
-    rewardShowcase[1].ids,
-  )
-  const charity = orderRewards(
-    items.filter((item) => item.category === 'charity'),
-    rewardShowcase[2].ids,
-  )
+  const giftCards = items.filter((item) => item.category === 'gift-card' || item.category === 'digital')
+  const charity = items.filter((item) => item.category === 'charity')
 
   return (
     <div>
@@ -83,26 +77,31 @@ export function RewardsPage() {
               <EmptyState title="No rewards in the catalog yet." description="Check back soon." />
             </div>
           ) : null}
-          <RewardCategorySection
-            title={rewardShowcase[0].title}
-            description={rewardShowcase[0].description}
-            rewards={cash}
-            comingSoonSlots={rewardShowcase[0].comingSoonSlots}
-            redeemTo={redeemTo}
-            featuredId="rwd_paypal"
-          />
-          <RewardCategorySection
-            title={rewardShowcase[1].title}
-            description={rewardShowcase[1].description}
-            rewards={giftCards}
-            redeemTo={redeemTo}
-          />
-          <RewardCategorySection
-            title={rewardShowcase[2].title}
-            description={rewardShowcase[2].description}
-            rewards={charity}
-            redeemTo={redeemTo}
-          />
+          {cash.length ? (
+            <RewardCategorySection
+              title={rewardShowcase[0].title}
+              description={rewardShowcase[0].description}
+              rewards={cash}
+              redeemTo={redeemTo}
+              featuredId="rwd_paypal"
+            />
+          ) : null}
+          {giftCards.length ? (
+            <RewardCategorySection
+              title={rewardShowcase[1].title}
+              description={rewardShowcase[1].description}
+              rewards={giftCards}
+              redeemTo={redeemTo}
+            />
+          ) : null}
+          {charity.length ? (
+            <RewardCategorySection
+              title={rewardShowcase[2].title}
+              description={rewardShowcase[2].description}
+              rewards={charity}
+              redeemTo={redeemTo}
+            />
+          ) : null}
         </>
       ) : null}
 
