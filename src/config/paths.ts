@@ -7,6 +7,7 @@ export const paths = {
   contact: '/contact',
   join: '/join',
   login: '/login',
+  verifyEmail: '/verify-email',
   dashboard: '/dashboard',
   history: '/history',
   settings: '/settings',

@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { GuestRoute, ProtectedRoute } from '@/components/auth/RouteGuards'
 import { PublicLayout } from '@/components/layout/PublicLayout'
 import { ScrollToTop } from '@/components/shared/ScrollToTop'
@@ -17,6 +17,17 @@ import { HelpPage } from '@/pages/public/HelpPage'
 import { HomePage } from '@/pages/public/HomePage'
 import { HowItWorksPage } from '@/pages/public/HowItWorksPage'
 import { RewardsPage } from '@/pages/public/RewardsPage'
+
+function VerifySearchRedirect() {
+  const { search, hash } = useLocation()
+  return <Navigate to={`${paths.verifyEmail}${search}${hash}`} replace />
+}
+
+function VerifyPathRedirect() {
+  const { token } = useParams()
+  const query = token ? `?token=${encodeURIComponent(token)}` : ''
+  return <Navigate to={`${paths.verifyEmail}${query}`} replace />
+}
 
 function LegacyPanelistRedirect() {
   const { pathname } = useLocation()
@@ -37,9 +48,9 @@ export default function App() {
             <Route path={paths.about} element={<AboutPage />} />
             <Route path={paths.contact} element={<ContactPage />} />
             <Route path={paths.join} element={<JoinPage />} />
-            <Route path="/verify" element={<VerifyPage />} />
-            <Route path="/verify-email" element={<VerifyPage />} />
-            <Route path="/verify/:token" element={<VerifyPage />} />
+            <Route path={paths.verifyEmail} element={<VerifyPage />} />
+            <Route path="/verify" element={<VerifySearchRedirect />} />
+            <Route path="/verify/:token" element={<VerifyPathRedirect />} />
             <Route element={<GuestRoute />}>
               <Route path={paths.login} element={<LoginPage />} />
               <Route path="/forgot-password" element={<LoginPage />} />

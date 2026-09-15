@@ -40,7 +40,6 @@ export function JoinPage() {
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [needsVerification, setNeedsVerification] = useState(false)
   const current = registerSteps[step] ?? registerSteps[0]
   const isLast = step === registerSteps.length - 1
   const steps = questionsState.data?.steps ?? []
@@ -74,8 +73,7 @@ export function JoinPage() {
     setSubmitting(true)
     setFormError('')
     try {
-      const outcome = await register(form)
-      setNeedsVerification(outcome.needsVerification)
+      await register(form)
       setSuccess(true)
     } catch (error) {
       const requestError = error instanceof ApiRequestError ? error : null
@@ -114,7 +112,7 @@ export function JoinPage() {
   if (user && !success) return <Navigate to="/dashboard" replace />
   if (success) {
     return (
-      <RegistrationSuccess needsVerification={needsVerification} email={form.email} />
+      <RegistrationSuccess email={form.email} />
     )
   }
 

@@ -79,16 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [completeSession])
 
   const register = useCallback(async (payload: RegisterPayload): Promise<RegisterOutcome> => {
-    const data = await authService.register({
+    await authService.register({
       name: `${payload.firstName.trim()} ${payload.lastName.trim()}`.trim(),
       email: payload.email.trim(),
       password: payload.password,
       phone: payload.phone.trim() || undefined,
     })
-    return {
-      status: 'registered',
-      needsVerification: Boolean(data?.activation_token) || !data?.token,
-    }
+    return { status: 'registered', needsVerification: true }
   }, [])
 
   const logout = useCallback(async () => {
