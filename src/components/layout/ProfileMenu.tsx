@@ -52,7 +52,7 @@ export function ProfileMenu({ onNavigate }: { onNavigate?: () => void }) {
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className="flex max-w-[13rem] items-center gap-2 rounded-full border border-line bg-white py-1 pr-2.5 pl-1 text-left shadow-soft transition-colors hover:border-teal/30 hover:bg-cream"
+        className="flex max-w-[11rem] items-center gap-2 rounded-full border border-line bg-white py-1 pr-2 pl-1 text-left text-ink shadow-soft transition-colors hover:border-teal/30 hover:bg-cream sm:max-w-[13rem] sm:pr-2.5"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
@@ -76,7 +76,7 @@ export function ProfileMenu({ onNavigate }: { onNavigate?: () => void }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration }}
-            className="absolute right-0 z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-2xl border border-line bg-white p-2 shadow-lift"
+            className="absolute right-0 z-50 mt-2 w-[min(16rem,calc(100vw-1.5rem))] origin-top-right overflow-hidden rounded-2xl border border-line bg-white p-2 text-ink shadow-lift"
           >
             <div className="rounded-xl px-3 py-2.5">
               <p className="truncate text-sm font-medium text-ink">{user.name}</p>

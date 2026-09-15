@@ -57,13 +57,13 @@ export function PublicHeader() {
           ) : null}
           <button
             type="button"
-            className="grid size-10 place-items-center rounded-full border border-line bg-white lg:hidden"
+            className="grid size-10 place-items-center rounded-full border border-line bg-white text-ink shadow-soft lg:hidden"
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? 'Close menu' : 'Open menu'}
           >
-            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+            {open ? <X className="size-5 text-ink" strokeWidth={2.25} /> : <Menu className="size-5 text-ink" strokeWidth={2.25} />}
           </button>
         </div>
       </div>

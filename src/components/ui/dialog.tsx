@@ -19,7 +19,7 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm data-[state=open]:animate-in" />
       <DialogPrimitive.Content
         className={cn(
-          'fixed top-1/2 left-1/2 z-50 max-h-[92svh] w-[calc(100%-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-line bg-cream p-6 shadow-lift',
+          'fixed top-1/2 left-1/2 z-50 max-h-[92svh] w-[calc(100%-1.25rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-line bg-cream p-4 shadow-lift sm:p-6',
           className,
         )}
         {...props}
@@ -35,8 +35,9 @@ export function DialogContent({
               <DialogPrimitive.Description className="sr-only">{title}</DialogPrimitive.Description>
             )}
           </div>
-          <DialogPrimitive.Close className="rounded-full p-1 text-muted hover:bg-white hover:text-ink">
-            <X className="size-5" />
+          <DialogPrimitive.Close className="grid size-10 shrink-0 place-items-center rounded-full border border-line bg-white text-ink shadow-soft hover:bg-teal-soft hover:text-teal-deep">
+            <X className="size-5 text-ink" strokeWidth={2.25} />
+            <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         </div>
         {children}

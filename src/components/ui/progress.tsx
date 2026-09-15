@@ -10,7 +10,7 @@ export function Progress({ className, value = 0, ...props }: ComponentProps<type
       {...props}
     >
       <ProgressPrimitive.Indicator
-        className="h-full rounded-full bg-teal transition-all"
+        className="h-full rounded-full bg-gold transition-all"
         style={{ width: `${value}%` }}
       />
     </ProgressPrimitive.Root>

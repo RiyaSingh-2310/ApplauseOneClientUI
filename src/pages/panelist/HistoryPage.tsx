@@ -43,7 +43,7 @@ export function HistoryPage() {
       </section>
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="inline-flex rounded-full border border-line bg-white p-1 shadow-soft">
+        <div className="flex w-full overflow-x-auto rounded-full border border-line bg-white p-1 shadow-soft sm:inline-flex sm:w-auto">
           {(
             [
               { id: 'rewards', label: 'Reward history' },
@@ -55,7 +55,7 @@ export function HistoryPage() {
               type="button"
               onClick={() => setTab(item.id)}
               className={cn(
-                'rounded-full px-4 py-2 text-sm transition-all duration-200',
+                'min-w-0 flex-1 rounded-full px-3 py-2 text-xs whitespace-nowrap transition-all duration-200 sm:flex-none sm:px-4 sm:text-sm',
                 tab === item.id ? 'bg-ink font-medium text-cream shadow-soft' : 'text-ink-soft hover:text-ink',
               )}
             >
