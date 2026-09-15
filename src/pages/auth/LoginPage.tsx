@@ -7,8 +7,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useMotionConfig } from '@/lib/motion'
 
 const welcomePoints = [
-  'Access available surveys',
-  'Track your rewards and earnings',
+  'Track your points and rewards',
+  'Review reward requests and history',
   'Update your profile anytime',
 ]
 
@@ -45,7 +45,7 @@ export function LoginPage() {
           <div className="relative">
             <p className="font-display text-4xl leading-tight">Welcome Back</p>
             <p className="mt-4 max-w-sm text-sm leading-7 text-white/80">
-              Log in to access your surveys, rewards, and member account in one place.
+              Log in to access your points, rewards, and member account in one place.
             </p>
             <ul className="mt-8 space-y-3">
               {welcomePoints.map((item) => (
@@ -62,7 +62,7 @@ export function LoginPage() {
         <div className="p-6 sm:p-10">
           <div className="mb-8 lg:hidden">
             <p className="font-display text-3xl text-ink">Welcome Back</p>
-            <p className="mt-2 text-sm text-ink-soft">Log in to access your surveys, rewards, and member account.</p>
+            <p className="mt-2 text-sm text-ink-soft">Log in to access your points, rewards, and member account.</p>
           </div>
           <AnimatePresence mode="wait">
             <motion.div

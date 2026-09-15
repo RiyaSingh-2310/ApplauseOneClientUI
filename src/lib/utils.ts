@@ -29,6 +29,18 @@ export function formatDate(value: string) {
   }).format(parseApiDate(value))
 }
 
+export function formatRelativeTime(value: string) {
+  const date = parseApiDate(value)
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startOfThatDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const dayDiff = Math.round((startOfToday - startOfThatDay) / 86_400_000)
+  if (dayDiff <= 0) return 'Today'
+  if (dayDiff === 1) return 'Yesterday'
+  if (dayDiff < 7) return `${dayDiff} days ago`
+  return formatDate(value)
+}
+
 export function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -49,6 +61,13 @@ export function splitName(name: string) {
 
 export function givenName(name?: string | null) {
   return splitName(name ?? '').firstName || 'there'
+}
+
+export function maskEmail(email: string) {
+  const [local, domain] = email.split('@')
+  if (!local || !domain) return email
+  const visible = local.slice(0, 1)
+  return `${visible}${'*'.repeat(Math.max(local.length - 1, 2))}@${domain}`
 }
 
 export function initials(name: string) {

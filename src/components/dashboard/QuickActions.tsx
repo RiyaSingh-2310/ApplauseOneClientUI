@@ -1,4 +1,4 @@
-import { Gift, History, ClipboardList, UserRound } from 'lucide-react'
+import { Gift, History, UserRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { paths } from '@/config/paths'
@@ -6,15 +6,14 @@ import { cardLiftClass } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 const actions = [
-  { to: paths.rewards, label: 'Browse Rewards', copy: 'Redeem points for cash, cards, and more.', icon: Gift },
-  { to: paths.history, label: 'View History', copy: 'See rewards and earnings in one place.', icon: History },
-  { to: paths.surveys, label: 'Find Surveys', copy: 'Open studies assigned to your profile.', icon: ClipboardList },
+  { to: paths.rewards, label: 'Choose a Reward', copy: 'Request a payout with your available points.', icon: Gift },
+  { to: paths.history, label: 'View History', copy: 'See reward requests and points in one place.', icon: History },
   { to: paths.settings, label: 'Manage Profile', copy: 'Keep your account details up to date.', icon: UserRound },
 ]
 
 export function QuickActions() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4">
       {actions.map((action) => (
         <Link key={action.to} to={action.to} className="block h-full">
           <Card className={cn('h-full', cardLiftClass)}>

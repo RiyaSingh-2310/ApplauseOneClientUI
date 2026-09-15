@@ -71,7 +71,7 @@ export function RewardsPage() {
               <p className="font-display mt-1 text-3xl text-ink">{formatNumber(points)}</p>
             </div>
             <p className="max-w-md text-sm leading-6 text-ink-soft">
-              Choose a reward below to submit a request. You can follow status in History.
+              Choose a reward to request a payout. After you submit, you can follow the status in History.
             </p>
           </div>
           {message ? <p className="mt-4 rounded-xl bg-success-soft px-4 py-3 text-sm text-success">{message}</p> : null}
@@ -184,7 +184,7 @@ export function RewardsPage() {
         }
         description={
           user
-            ? 'Your points stay on your member account. Redeem when you are ready, or return to your dashboard for surveys and history.'
+            ? 'Your points stay on your member account. Redeem when you are ready, or return to your dashboard for activity and history.'
             : rewardsCta.description
         }
         primary={user ? { to: paths.dashboard, label: 'Go to Dashboard' } : { to: paths.join, label: rewardsCta.primary }}

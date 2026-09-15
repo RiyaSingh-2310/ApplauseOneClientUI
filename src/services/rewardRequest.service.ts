@@ -1,7 +1,7 @@
 import type { PaginatedResponse } from '@/types/common'
 import type { RewardRequestRecord } from '@/types/api'
 import type { RewardHistoryQuery, RewardRequest, RewardTransaction } from '@/types/reward'
-import { mapRewardRequest, mapTransaction } from '@/lib/apiMap'
+import { mapRewardRequest, mapTransaction, unwrapCollection } from '@/lib/apiMap'
 import { parseApiDate } from '@/lib/utils'
 import { apiRequest } from './http'
 import { rewardService } from './reward.service'
@@ -16,7 +16,9 @@ function matchesDate(value: string, from?: string, to?: string) {
 
 export const rewardRequestService = {
   listRecords() {
-    return apiRequest<{ requests: RewardRequestRecord[] }>('/rewards/requests').then((data) => data.requests ?? [])
+    return apiRequest<unknown>('/rewards/requests').then((data) =>
+      unwrapCollection<RewardRequestRecord>(data, ['requests', 'items']),
+    )
   },
   async list(): Promise<PaginatedResponse<RewardRequest>> {
     const items = (await rewardRequestService.listRecords()).map(mapRewardRequest)

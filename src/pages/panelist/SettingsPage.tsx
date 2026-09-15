@@ -8,12 +8,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { NumericInput } from '@/components/ui/numeric-input'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { paths } from '@/config/paths'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
 import { answersToValues, buildOnboardingPayload, flattenQuestions } from '@/lib/apiMap'
+import { digitsOnly } from '@/lib/numeric'
 import { formatDate, mediaUrl } from '@/lib/utils'
 import { PHONE_PATTERN, validateNewPassword } from '@/lib/validation'
 import { authService } from '@/services/auth.service'
@@ -40,7 +42,7 @@ export function SettingsPage() {
   const seeded = data
     ? {
         name: data.user.name,
-        phone: data.user.phone ?? '',
+        phone: digitsOnly(data.user.phone ?? '', 15),
         answers: answersToValues(data.answers),
       }
     : null
@@ -62,7 +64,7 @@ export function SettingsPage() {
   async function onSave() {
     if (!data || !form) return
     if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
-      setSaveError('Enter a valid phone number, including area code.')
+      setSaveError('Enter 7 to 15 digits, with no letters or symbols.')
       return
     }
     setSaving(true)
@@ -200,10 +202,13 @@ export function SettingsPage() {
             <Input id="settings-email" value={data.user.email} readOnly />
           </Field>
           <Field label="Phone number" htmlFor="settings-phone">
-            <Input
+            <NumericInput
               id="settings-phone"
+              autoComplete="tel"
+              integer
+              maxDigits={15}
               value={form.phone}
-              onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+              onValueChange={(value) => setForm((current) => ({ ...current, phone: value }))}
             />
           </Field>
           <div className="flex justify-end">

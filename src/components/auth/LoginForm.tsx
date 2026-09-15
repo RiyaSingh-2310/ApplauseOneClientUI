@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { UserRound } from 'lucide-react'
 import { PasswordField } from '@/components/forms/PasswordField'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -34,7 +33,7 @@ export function LoginForm({
     event.preventDefault()
     const next: Record<string, string> = {}
     if (!email.trim()) next.email = 'Email is required.'
-    else if (!EMAIL_PATTERN.test(email)) next.email = 'Enter a valid email address.'
+    else if (!EMAIL_PATTERN.test(email.trim())) next.email = 'Enter a valid email address.'
     if (!password) next.password = 'Password is required.'
     setErrors(next)
     if (Object.keys(next).length) return
@@ -42,10 +41,18 @@ export function LoginForm({
     setSubmitting(true)
     setFormError('')
     try {
-      await login({ email, password, rememberMe })
-      navigate(from, { replace: true })
+      await login({ email: email.trim(), password, rememberMe })
+      navigate(from.startsWith('/') ? from : '/dashboard', { replace: true })
     } catch (error) {
-      setFormError(error instanceof ApiRequestError ? error.message : 'Unable to sign in. Please try again.')
+      const requestError = error instanceof ApiRequestError ? error : null
+      if (requestError?.fieldErrors) setErrors((current) => ({ ...current, ...requestError.fieldErrors }))
+      if (requestError?.status === 403) {
+        setFormError('Please verify your email before signing in. Check your inbox for the activation link.')
+      } else if (requestError?.status === 401) {
+        setFormError('Those details did not match our records. Please try again.')
+      } else {
+        setFormError(requestError?.message ?? 'Unable to sign in. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -90,15 +97,6 @@ export function LoginForm({
       </div>
       <Button type="submit" className="w-full" disabled={submitting}>
         {submitting ? 'Signing in…' : 'Login'}
-      </Button>
-      <div className="flex items-center gap-3 text-xs text-muted">
-        <span className="h-px flex-1 bg-line" />
-        or
-        <span className="h-px flex-1 bg-line" />
-      </div>
-      <Button type="submit" variant="outline" className="w-full" disabled={submitting}>
-        <UserRound />
-        Continue as Member
       </Button>
     </form>
   )

@@ -4,7 +4,7 @@ import { ProjectStatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAsync } from '@/hooks/useAsync'
-import { getSurveyAction } from '@/lib/projects'
+import { getProjectAction } from '@/lib/projects'
 import { formatDate, formatNumber } from '@/lib/utils'
 import { projectService } from '@/services/project.service'
 import type { AssignedProject } from '@/types/project'
@@ -34,7 +34,7 @@ export function ProjectsPage() {
       <section className="hero-grid px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="mx-auto max-w-6xl">
           <p className="text-xs font-semibold tracking-[0.18em] text-teal uppercase">Your studies</p>
-          <h1 className="font-display mt-3 text-4xl text-ink sm:text-5xl">Surveys</h1>
+          <h1 className="font-display mt-3 text-4xl text-ink sm:text-5xl">Projects</h1>
           <p className="mt-4 max-w-2xl text-base leading-8 text-ink-soft">
             Every study assigned to you lives here. Open a survey when you are ready — no need to wait on email.
           </p>
@@ -44,7 +44,7 @@ export function ProjectsPage() {
 
       {items.length === 0 ? (
         <EmptyState
-            title="No surveys assigned yet."
+            title="No projects assigned yet."
             description="Assigned studies will appear here when they are matched to your profile."
         />
       ) : (
@@ -96,7 +96,7 @@ export function ProjectsPage() {
 }
 
 function SurveyAction({ project }: { project: AssignedProject }) {
-  const action = getSurveyAction(project)
+  const action = getProjectAction(project)
 
   if (action.disabled || !action.href) {
     return (

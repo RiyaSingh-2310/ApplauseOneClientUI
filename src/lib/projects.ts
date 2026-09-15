@@ -1,14 +1,14 @@
 import type { AssignedProject } from '@/types/project'
 
-export function getSurveyAction(project: AssignedProject) {
+export function getProjectAction(project: AssignedProject) {
   if (project.status === 'completed') {
-    return { disabled: true, label: 'Already completed' }
+    return { disabled: true, label: 'Completed' }
   }
   if (project.status === 'expired' || project.status === 'closed') {
-    return { disabled: true, label: project.status === 'closed' ? 'Project closed' : 'Assignment expired' }
+    return { disabled: true, label: project.status === 'closed' ? 'Closed' : 'Expired' }
   }
-  if (!project.surveyUrl) {
-    return { disabled: true, label: 'Survey unavailable' }
+  if (project.surveyUrl) {
+    return { disabled: false, label: 'View details', href: project.surveyUrl }
   }
-  return { disabled: false, label: 'Open survey', href: project.surveyUrl }
+  return { disabled: true, label: 'View details' }
 }

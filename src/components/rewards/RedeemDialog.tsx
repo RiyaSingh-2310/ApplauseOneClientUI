@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+import { NumericInput } from '@/components/ui/numeric-input'
 import { asNumber, formatNumber } from '@/lib/utils'
 import { ApiRequestError } from '@/services/errors'
 import { rewardService } from '@/services/reward.service'
@@ -49,7 +49,7 @@ export function RedeemDialog({
 
   return (
     <Dialog open onOpenChange={(nextOpen) => { if (!nextOpen) onClose() }}>
-      <DialogContent title="Confirm reward redemption" description={`Review this ${reward.name} request before you submit.`}>
+      <DialogContent title="Request this reward" description={`Review this ${reward.name} request before you submit.`}>
         {errorMessage ? (
           <p className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
             {errorMessage}
@@ -71,25 +71,24 @@ export function RedeemDialog({
             </div>
           </dl>
           <Field label="Points to redeem" htmlFor="redeem-points" hint={`Minimum ${formatNumber(minimum)} points.`}>
-            <Input
+            <NumericInput
               id="redeem-points"
-              type="number"
-              min={minimum}
-              max={points}
-              value={redeemPoints}
-              onChange={(event) => setRedeemPoints(asNumber(event.target.value))}
+              integer
+              maxDigits={8}
+              value={redeemPoints || ''}
+              onValueChange={(value) => setRedeemPoints(asNumber(value))}
             />
           </Field>
         </div>
         <p className="mt-4 text-sm leading-6 text-ink-soft">
-          This creates a pending request. You can follow its status in History after it is submitted.
+          Submitting creates a pending request. You can follow approval, rejection, or completion in History.
         </p>
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={() => void confirmRedeem()} disabled={submitting || !canRedeem}>
-            {submitting ? 'Submitting…' : 'Confirm redemption'}
+            {submitting ? 'Submitting…' : 'Submit request'}
           </Button>
         </div>
       </DialogContent>

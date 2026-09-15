@@ -20,5 +20,5 @@ export const legacyPanelistRedirects: Record<string, string> = {
   '/panelist/reward-requests': paths.history,
   '/panelist/reward-history': paths.history,
   '/panelist/profile': paths.settings,
-  '/panelist/projects': paths.surveys,
+  '/panelist/projects': paths.dashboard,
 }

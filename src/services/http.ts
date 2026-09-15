@@ -24,8 +24,10 @@ function parseFieldErrors(errors: unknown): Record<string, string> | undefined {
 
 function statusMessage(status: number, fallback: string) {
   if (status === 401) return fallback || 'Your session has expired. Please sign in again.'
-  if (status === 403) return fallback || 'You do not have access to this action.'
+  if (status === 403) return fallback || 'This account cannot sign in yet. If you just joined, verify your email first.'
   if (status === 404) return fallback || 'We could not find that information.'
+  if (status === 409) return fallback || 'An account with this email already exists.'
+  if (status === 410) return fallback || 'This link has expired. Please request a new one.'
   if (status === 422) return fallback || 'Please check the highlighted fields and try again.'
   if (status >= 500) return fallback || 'The server is having trouble right now. Please try again.'
   return fallback || 'Something went wrong. Please try again.'

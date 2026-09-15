@@ -23,7 +23,7 @@ function requestTitle(status: string) {
   return 'Reward update'
 }
 
-function activityFromData(
+export function activityFromData(
   transactions: RewardTransactionRecord[],
   requests: RewardRequestRecord[],
 ): ActivityItem[] {

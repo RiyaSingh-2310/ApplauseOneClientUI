@@ -44,6 +44,7 @@ export interface RegisterPayload extends RegisterAccount, RegisterPersonal {
   acceptPrivacy: boolean
 }
 
-export type RegisterOutcome =
-  | { status: 'authenticated' }
-  | { status: 'verification_required'; message: string }
+export type RegisterOutcome = {
+  status: 'registered'
+  needsVerification: boolean
+}

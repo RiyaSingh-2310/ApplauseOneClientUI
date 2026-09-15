@@ -134,7 +134,9 @@ select:-webkit-autofill:focus,
 select:-webkit-autofill:active {
   -webkit-text-fill-color: var(--color-ink);
   caret-color: var(--color-ink);
+  border-radius: 0.75rem;
   box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
   transition: background-color 99999s ease-out 0s;
 }
 

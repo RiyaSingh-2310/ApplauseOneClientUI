@@ -4,6 +4,8 @@ import { PasswordStrength } from '@/components/shared/PasswordStrength'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { NumericInput } from '@/components/ui/numeric-input'
+import { NAME_MAX_LENGTH, PHONE_MAX_DIGITS, ZIP_MAX_LENGTH } from '@/lib/validation'
 import type { RegisterPayload } from '@/types/auth'
 
 interface StepProps {
@@ -16,19 +18,55 @@ export function PersonalStep({ form, errors, update }: StepProps) {
   return (
     <div className="mt-6 grid gap-5 sm:grid-cols-2">
       <Field label="First name" htmlFor="firstName" required error={errors.firstName}>
-        <Input id="firstName" placeholder="First name" autoComplete="given-name" value={form.firstName} onChange={(event) => update('firstName', event.target.value)} />
+        <Input
+          id="firstName"
+          placeholder="First name"
+          autoComplete="given-name"
+          maxLength={NAME_MAX_LENGTH}
+          value={form.firstName}
+          onChange={(event) => update('firstName', event.target.value)}
+        />
       </Field>
       <Field label="Last name" htmlFor="lastName" required error={errors.lastName}>
-        <Input id="lastName" placeholder="Last name" autoComplete="family-name" value={form.lastName} onChange={(event) => update('lastName', event.target.value)} />
+        <Input
+          id="lastName"
+          placeholder="Last name"
+          autoComplete="family-name"
+          maxLength={NAME_MAX_LENGTH}
+          value={form.lastName}
+          onChange={(event) => update('lastName', event.target.value)}
+        />
       </Field>
       <Field label="Email address" htmlFor="email" required error={errors.email} className="sm:col-span-2">
-        <Input id="email" type="email" autoComplete="email" placeholder="you@email.com" value={form.email} onChange={(event) => update('email', event.target.value)} />
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@email.com"
+          value={form.email}
+          onChange={(event) => update('email', event.target.value)}
+        />
       </Field>
-      <Field label="Phone number" htmlFor="phone" error={errors.phone} hint="Optional">
-        <Input id="phone" placeholder="(555) 555-5555" autoComplete="tel" value={form.phone} onChange={(event) => update('phone', event.target.value)} />
+      <Field label="Phone number" htmlFor="phone" error={errors.phone} hint="Optional, up to 15 digits">
+        <NumericInput
+          id="phone"
+          placeholder="5555555555"
+          autoComplete="tel"
+          integer
+          maxDigits={PHONE_MAX_DIGITS}
+          value={form.phone}
+          onValueChange={(value) => update('phone', value)}
+        />
       </Field>
       <Field label="ZIP / postal code" htmlFor="zipCode" error={errors.zipCode} hint="Optional">
-        <Input id="zipCode" placeholder="ZIP or postal code" autoComplete="postal-code" value={form.zipCode} onChange={(event) => update('zipCode', event.target.value)} />
+        <Input
+          id="zipCode"
+          placeholder="ZIP or postal code"
+          autoComplete="postal-code"
+          maxLength={ZIP_MAX_LENGTH}
+          value={form.zipCode}
+          onChange={(event) => update('zipCode', event.target.value.slice(0, ZIP_MAX_LENGTH))}
+        />
       </Field>
       <Field label="Password" htmlFor="password" required error={errors.password} hint="At least 8 characters, with a letter and a number." className="sm:col-span-2">
         <PasswordField id="password" autoComplete="new-password" value={form.password} onChange={(event) => update('password', event.target.value)} />

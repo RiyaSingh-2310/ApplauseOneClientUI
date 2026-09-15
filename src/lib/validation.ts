@@ -3,8 +3,12 @@ import type { RegisterPayload } from '@/types/auth'
 import { questionsForApiStep } from '@/lib/apiMap'
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-export const ZIP_PATTERN = /^[A-Za-z0-9][A-Za-z0-9\s-]{2,9}$/
-export const PHONE_PATTERN = /^[+]?[\d\s().-]{10,18}$/
+export const NAME_PATTERN = /^[\p{L}][\p{L}\s'.-]*$/u
+export const ZIP_PATTERN = /^[A-Za-z0-9][A-Za-z0-9\s-]{0,9}$/
+export const PHONE_PATTERN = /^\d{7,15}$/
+export const NAME_MAX_LENGTH = 30
+export const PHONE_MAX_DIGITS = 15
+export const ZIP_MAX_LENGTH = 10
 
 export const registerSteps = [
   { id: 0, title: 'Personal', heading: 'Personal Information', copy: 'Your details and a secure password.' },
@@ -71,11 +75,17 @@ export function validateRegisterStep(
   const errors: Record<string, string> = {}
 
   if (step === 0) {
-    if (!form.firstName.trim()) errors.firstName = 'First name is required.'
-    if (!form.lastName.trim()) errors.lastName = 'Last name is required.'
-    if (!EMAIL_PATTERN.test(form.email)) errors.email = 'Enter a valid email address.'
+    const firstName = form.firstName.trim()
+    const lastName = form.lastName.trim()
+    if (!firstName) errors.firstName = 'First name is required.'
+    else if (firstName.length > NAME_MAX_LENGTH) errors.firstName = 'First name must be 30 characters or fewer.'
+    else if (!NAME_PATTERN.test(firstName)) errors.firstName = 'Enter a valid first name.'
+    if (!lastName) errors.lastName = 'Last name is required.'
+    else if (lastName.length > NAME_MAX_LENGTH) errors.lastName = 'Last name must be 30 characters or fewer.'
+    else if (!NAME_PATTERN.test(lastName)) errors.lastName = 'Enter a valid last name.'
+    if (!EMAIL_PATTERN.test(form.email.trim())) errors.email = 'Enter a valid email address.'
     if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
-      errors.phone = 'Enter a valid phone number, including area code.'
+      errors.phone = 'Enter 7 to 15 digits, with no letters or symbols.'
     }
     if (form.zipCode.trim() && !ZIP_PATTERN.test(form.zipCode.trim())) {
       errors.zipCode = 'Enter a valid ZIP or postal code.'

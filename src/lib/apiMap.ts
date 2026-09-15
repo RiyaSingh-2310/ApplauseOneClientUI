@@ -92,6 +92,17 @@ export function buildOnboardingPayload(
   return payload
 }
 
+export function unwrapCollection<T>(payload: unknown, keys: string[]): T[] {
+  if (Array.isArray(payload)) return payload as T[]
+  if (!payload || typeof payload !== 'object') return []
+  const record = payload as Record<string, unknown>
+  for (const key of keys) {
+    const value = record[key]
+    if (Array.isArray(value)) return value as T[]
+  }
+  return []
+}
+
 export function paymentMethodName(record: RewardRequestRecord) {
   return record.payment_method || record.payment_methord || 'Reward'
 }

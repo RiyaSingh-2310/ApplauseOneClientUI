@@ -2,7 +2,7 @@ import type { PublicSettings, RewardBalance, RewardRequestRecord, RewardTransact
 import type { PointsGuide, RedeemRewardPayload, RewardOption, RewardRequest } from '@/types/reward'
 import { hydrateInstantCash } from '@/lib/rewards'
 import { asNumber } from '@/lib/utils'
-import { mapRewardRequest, paymentMethodCategory, paymentMethodsToRewards } from '@/lib/apiMap'
+import { unwrapCollection } from '@/lib/apiMap'
 import { apiRequest } from './http'
 
 export interface RewardCatalogResponse {
@@ -55,8 +55,8 @@ export const rewardService = {
     }
   },
   getTransactions() {
-    return apiRequest<{ transactions: RewardTransactionRecord[] }>('/rewards/transactions').then(
-      (data) => data.transactions ?? [],
+    return apiRequest<unknown>('/rewards/transactions').then((data) =>
+      unwrapCollection<RewardTransactionRecord>(data, ['transactions', 'items']),
     )
   },
   async redeem(payload: RedeemRewardPayload): Promise<RewardRequest> {

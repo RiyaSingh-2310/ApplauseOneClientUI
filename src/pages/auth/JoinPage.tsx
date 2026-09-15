@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Lock, ShieldCheck, Sparkles, Gift } from 'lucide-react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { JoinHero } from '@/components/forms/join/JoinHero'
 import { JoinSidebar } from '@/components/forms/join/JoinSidebar'
 import { OnboardingFields } from '@/components/forms/join/OnboardingFields'
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { joinIncentive, joinTrust } from '@/config/brand'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
-import { buildOnboardingPayload, flattenQuestions, questionsForApiStep } from '@/lib/apiMap'
+import { questionsForApiStep } from '@/lib/apiMap'
 import { useMotionConfig } from '@/lib/motion'
 import {
   emptyRegisterForm,
@@ -31,8 +31,7 @@ import type { RegisterPayload } from '@/types/auth'
 const trustIcons = [Lock, ShieldCheck, Sparkles, Gift]
 
 export function JoinPage() {
-  const { user, register, refresh } = useAuth()
-  const navigate = useNavigate()
+  const { user, register } = useAuth()
   const { duration } = useMotionConfig()
   const questionsState = useAsync(() => onboardingService.getQuestions())
   const [step, setStep] = useState(0)
@@ -76,30 +75,7 @@ export function JoinPage() {
     setFormError('')
     try {
       const outcome = await register(form)
-      if (outcome.status === 'authenticated') {
-        const payload = buildOnboardingPayload(flattenQuestions(steps), form.answers, {
-          acceptTerms: form.acceptTerms,
-          acceptPrivacy: form.acceptPrivacy,
-          emailInvitations: form.emailInvitations,
-        })
-        if (payload.length) {
-          try {
-            await onboardingService.saveAnswers(payload)
-            await refresh()
-          } catch (error) {
-            setFormError(
-              error instanceof ApiRequestError
-                ? `${error.message} Your account was created — you can finish these answers in Profile.`
-                : 'Your account was created. Please finish onboarding in Profile.',
-            )
-            setSuccess(true)
-            return
-          }
-        }
-        setSuccess(true)
-        return
-      }
-      setNeedsVerification(true)
+      setNeedsVerification(outcome.needsVerification)
       setSuccess(true)
     } catch (error) {
       const requestError = error instanceof ApiRequestError ? error : null
@@ -134,10 +110,7 @@ export function JoinPage() {
   if (user && !success) return <Navigate to="/dashboard" replace />
   if (success) {
     return (
-      <RegistrationSuccess
-        needsVerification={needsVerification}
-        onContinue={() => navigate('/dashboard')}
-      />
+      <RegistrationSuccess needsVerification={needsVerification} email={form.email} />
     )
   }
 

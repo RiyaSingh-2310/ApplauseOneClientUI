@@ -11,7 +11,6 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { DashboardPage } from '@/pages/panelist/DashboardPage'
 import { HistoryPage } from '@/pages/panelist/HistoryPage'
 import { SettingsPage } from '@/pages/panelist/SettingsPage'
-import { ProjectsPage } from '@/pages/panelist/ProjectsPage'
 import { AboutPage } from '@/pages/public/AboutPage'
 import { ContactPage } from '@/pages/public/ContactPage'
 import { HelpPage } from '@/pages/public/HelpPage'
@@ -39,6 +38,8 @@ export default function App() {
             <Route path={paths.contact} element={<ContactPage />} />
             <Route path={paths.join} element={<JoinPage />} />
             <Route path="/verify" element={<VerifyPage />} />
+            <Route path="/verify-email" element={<VerifyPage />} />
+            <Route path="/verify/:token" element={<VerifyPage />} />
             <Route element={<GuestRoute />}>
               <Route path={paths.login} element={<LoginPage />} />
               <Route path="/forgot-password" element={<LoginPage />} />
@@ -48,7 +49,7 @@ export default function App() {
               <Route path={paths.dashboard} element={<DashboardPage />} />
               <Route path={paths.history} element={<HistoryPage />} />
               <Route path={paths.settings} element={<SettingsPage />} />
-              <Route path={paths.surveys} element={<ProjectsPage />} />
+              <Route path={paths.surveys} element={<Navigate to={paths.dashboard} replace />} />
             </Route>
           </Route>
 

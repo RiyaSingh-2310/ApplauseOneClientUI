@@ -1,17 +1,20 @@
+import { useState } from 'react'
 import { Check } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useMotionConfig } from '@/lib/motion'
+import { maskEmail } from '@/lib/utils'
 
 export function RegistrationSuccess({
-  onContinue,
   needsVerification = false,
+  email,
 }: {
-  onContinue?: () => void
   needsVerification?: boolean
+  email?: string
 }) {
   const { duration } = useMotionConfig()
+  const [phase, setPhase] = useState<'email' | 'complete'>(needsVerification ? 'email' : 'complete')
 
   return (
     <div className="px-4 py-16 sm:px-6">
@@ -29,26 +32,30 @@ export function RegistrationSuccess({
         >
           <Check className="size-7" />
         </motion.div>
-        {needsVerification ? (
+        {phase === 'email' ? (
           <>
             <p className="mt-5 text-xs font-semibold tracking-[0.2em] text-teal uppercase">Check your email</p>
             <h1 className="font-display mt-3 text-4xl text-ink">Verify your account</h1>
             <p className="mt-4 text-ink-soft">
-              Your profile was created. Please verify your email before signing in.
+              We’ve sent a verification email{email ? ` to ${maskEmail(email)}` : ''}. Open the message and follow the
+              link to activate your account, then continue to confirm your registration.
             </p>
-            <Button className="mt-8" asChild>
-              <Link to="/login">Back to login</Link>
+            <Button className="mt-8" type="button" onClick={() => setPhase('complete')}>
+              Continue
             </Button>
           </>
         ) : (
           <>
-            <p className="mt-5 text-xs font-semibold tracking-[0.2em] text-teal uppercase">You’re in</p>
-            <h1 className="font-display mt-3 text-4xl text-ink">Welcome to Applause One!</h1>
+            <p className="mt-5 text-xs font-semibold tracking-[0.2em] text-teal uppercase">Registration complete</p>
+            <h1 className="font-display mt-3 text-4xl text-ink">You’re registered with Applause One</h1>
             <p className="mt-4 text-ink-soft">
-              Your consumer profile has been successfully created. Assigned studies will appear in the member portal, with the newest project first.
+              Your consumer profile has been created successfully.
+              {needsVerification
+                ? ' After you verify your email, sign in with your credentials to open your member dashboard.'
+                : ' Sign in with your credentials to open your member dashboard.'}
             </p>
-            <Button className="mt-8" onClick={onContinue}>
-              Continue to Member Portal
+            <Button className="mt-8" asChild>
+              <Link to="/login">Login</Link>
             </Button>
           </>
         )}

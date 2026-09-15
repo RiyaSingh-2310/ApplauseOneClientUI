@@ -3,6 +3,12 @@ import type { AuthSuccessData, Panelist } from '@/types/api'
 import { ApiRequestError } from './errors'
 import { apiRequest } from './http'
 
+function requireUser(data: Panelist | { user: Panelist } | undefined): Panelist {
+  if (data && typeof data === 'object' && 'user' in data && data.user?.email) return data.user
+  if (data && typeof data === 'object' && 'email' in data && data.email) return data
+  throw new ApiRequestError({ message: 'Unable to load your profile.' })
+}
+
 function requireSession(data: AuthSuccessData | undefined, fallback: string): AuthSession {
   if (!data?.token || !data.user) {
     throw new ApiRequestError({ message: fallback })
@@ -32,11 +38,11 @@ export const authService = {
     })
   },
   verify(token: string) {
-    return apiRequest<AuthSuccessData>('/auth/verify', {
+    return apiRequest<AuthSuccessData | undefined>('/auth/verify', {
       method: 'POST',
       body: { token },
       auth: false,
-    }).then((data) => requireSession(data, 'Verification did not return a session.'))
+    })
   },
   forgotPassword(payload: ForgotPasswordPayload) {
     return apiRequest<{ reset_token?: string }>('/auth/forgot-password', {
@@ -66,20 +72,20 @@ export const authService = {
     return apiRequest<unknown>('/auth/logout', { method: 'POST' })
   },
   me() {
-    return apiRequest<{ user: Panelist }>('/me').then((data) => data.user)
+    return apiRequest<Panelist | { user: Panelist }>('/me').then(requireUser)
   },
   updateMe(payload: { name?: string; phone?: string }) {
-    return apiRequest<{ user: Panelist }>('/me', {
+    return apiRequest<Panelist | { user: Panelist }>('/me', {
       method: 'PUT',
       body: payload,
-    }).then((data) => data.user)
+    }).then(requireUser)
   },
   uploadPhoto(file: File) {
     const body = new FormData()
     body.append('photo', file)
-    return apiRequest<{ user: Panelist }>('/me/photo', {
+    return apiRequest<Panelist | { user: Panelist }>('/me/photo', {
       method: 'POST',
       body,
-    }).then((data) => data.user)
+    }).then(requireUser)
   },
 }

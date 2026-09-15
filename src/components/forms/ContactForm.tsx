@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { EMAIL_PATTERN } from '@/lib/validation'
+import { EMAIL_PATTERN, NAME_MAX_LENGTH, NAME_PATTERN } from '@/lib/validation'
 import { ApiRequestError } from '@/services/errors'
 import { contactService } from '@/services/contact.service'
 
@@ -32,7 +32,11 @@ export function ContactForm({
     const fullName = layout === 'full' ? `${firstName} ${lastName}`.trim() : name.trim()
     if (layout === 'full') {
       if (!firstName.trim()) next.firstName = 'Please enter your first name.'
+      else if (firstName.trim().length > NAME_MAX_LENGTH) next.firstName = 'First name must be 30 characters or fewer.'
+      else if (!NAME_PATTERN.test(firstName.trim())) next.firstName = 'Enter a valid first name.'
       if (!lastName.trim()) next.lastName = 'Please enter your last name.'
+      else if (lastName.trim().length > NAME_MAX_LENGTH) next.lastName = 'Last name must be 30 characters or fewer.'
+      else if (!NAME_PATTERN.test(lastName.trim())) next.lastName = 'Enter a valid last name.'
     } else if (!name.trim()) {
       next.name = 'Please enter your name.'
     }
@@ -83,6 +87,7 @@ export function ContactForm({
             <Input
               id={`${idPrefix}-first`}
               autoComplete="given-name"
+              maxLength={NAME_MAX_LENGTH}
               placeholder="Enter your first name"
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
@@ -92,6 +97,7 @@ export function ContactForm({
             <Input
               id={`${idPrefix}-last`}
               autoComplete="family-name"
+              maxLength={NAME_MAX_LENGTH}
               placeholder="Enter your last name"
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}

@@ -1,7 +1,6 @@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field } from '@/components/ui/field'
 import { Select } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
 import type { OnboardingQuestion } from '@/types/api'
 
 export function OnboardingFields({
@@ -57,7 +56,7 @@ export function OnboardingFields({
             >
               <div className="grid gap-2 sm:grid-cols-2">
                 {options.map((option) => (
-                  <label key={option.value} className="flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-sm">
+                  <label key={option.value} className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2 text-sm">
                     <Checkbox
                       checked={selected.includes(option.value)}
                       onCheckedChange={() => {
@@ -88,14 +87,11 @@ export function OnboardingFields({
               {options.map((option) => (
                 <label
                   key={option.value}
-                  className={cn(
-                    'flex cursor-pointer items-center rounded-2xl border px-4 py-3 text-sm',
-                    value === option.value ? 'border-teal bg-teal-soft' : 'border-line bg-cream',
-                  )}
+                  className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink"
                 >
                   <input
                     type="radio"
-                    className="sr-only"
+                    className="size-4 shrink-0 accent-teal"
                     name={`q-${question.id}`}
                     value={option.value}
                     checked={value === option.value}

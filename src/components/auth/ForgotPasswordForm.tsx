@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { PasswordField } from '@/components/forms/PasswordField'
-import { EMAIL_PATTERN } from '@/lib/validation'
+import { PasswordStrength } from '@/components/shared/PasswordStrength'
+import { EMAIL_PATTERN, validateNewPassword } from '@/lib/validation'
 import { ApiRequestError } from '@/services/errors'
 import { authService } from '@/services/auth.service'
 
@@ -15,29 +16,24 @@ export function ForgotPasswordForm({
   initialToken?: string
 }) {
   const [email, setEmail] = useState('')
-  const [token, setToken] = useState(initialToken)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [stage, setStage] = useState<'request' | 'reset' | 'done'>(initialToken ? 'reset' : 'request')
+  const [stage, setStage] = useState<'request' | 'sent' | 'reset' | 'done'>(initialToken ? 'reset' : 'request')
 
   async function onRequest(event: FormEvent) {
     event.preventDefault()
-    if (!EMAIL_PATTERN.test(email)) {
+    if (!EMAIL_PATTERN.test(email.trim())) {
       setError('Enter the email on your account.')
       return
     }
     setSubmitting(true)
     setError('')
     try {
-      const data = await authService.forgotPassword({ email })
-      if (data?.reset_token) {
-        setToken(data.reset_token)
-        setStage('reset')
-        return
-      }
-      setStage('done')
+      await authService.forgotPassword({ email: email.trim() })
+      setStage('sent')
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : 'Unable to process your request. Please try again.')
     } finally {
@@ -47,38 +43,50 @@ export function ForgotPasswordForm({
 
   async function onReset(event: FormEvent) {
     event.preventDefault()
-    if (!token.trim()) {
-      setError('A reset token is required.')
+    if (!initialToken.trim()) {
+      setError('This reset link is missing a token. Please use the link from your email.')
       return
     }
-    if (password.length < 6) {
-      setError('Use at least 6 characters.')
-      return
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
+    const next = validateNewPassword(password, confirmPassword)
+    setFieldErrors(next)
+    if (Object.keys(next).length) return
     setSubmitting(true)
     setError('')
     try {
-      await authService.resetPassword({ token: token.trim(), password })
+      await authService.resetPassword({ token: initialToken.trim(), password })
       setStage('done')
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : 'Unable to reset your password. Please try again.')
+      const requestError = err instanceof ApiRequestError ? err : null
+      if (requestError?.status === 410) {
+        setError('This reset link has expired. Please request a new one.')
+      } else {
+        setError(requestError?.message ?? 'Unable to reset your password. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
   }
 
-  if (stage === 'done') {
+  if (stage === 'sent') {
     return (
       <div>
         <p className="rounded-xl bg-success-soft px-4 py-3 text-sm text-success" role="status">
-          {token && password ? 'Your password has been updated. You can sign in now.' : 'If that email exists, password reset instructions were sent.'}
+          Check your email. If that address is on an Applause One account, we sent password reset instructions.
         </p>
         <Button className="mt-6 w-full" variant="outline" type="button" onClick={onBack}>
-          Back to login
+          Back to Login
+        </Button>
+      </div>
+    )
+  }
+
+  if (stage === 'done') {
+    return (
+      <div className="text-center">
+        <h3 className="font-display text-2xl text-ink">Password Reset Successfully</h3>
+        <p className="mt-2 text-sm text-ink-soft">You can now sign in with your new password.</p>
+        <Button className="mt-6 w-full" type="button" onClick={onBack}>
+          Continue to Login
         </Button>
       </div>
     )
@@ -92,8 +100,7 @@ export function ForgotPasswordForm({
             {error}
           </p>
         ) : null}
-        <p className="text-sm text-ink-soft">Choose a new password for your member account.</p>
-        <Field label="New password" htmlFor="reset-password" required>
+        <Field label="New password" htmlFor="reset-password" required error={fieldErrors.password}>
           <PasswordField
             id="reset-password"
             autoComplete="new-password"
@@ -101,7 +108,8 @@ export function ForgotPasswordForm({
             onChange={(event) => setPassword(event.target.value)}
           />
         </Field>
-        <Field label="Confirm password" htmlFor="reset-confirm" required>
+        <PasswordStrength password={password} />
+        <Field label="Confirm password" htmlFor="reset-confirm" required error={fieldErrors.confirmPassword}>
           <PasswordField
             id="reset-confirm"
             autoComplete="new-password"
@@ -113,7 +121,7 @@ export function ForgotPasswordForm({
           {submitting ? 'Updating…' : 'Update password'}
         </Button>
         <button type="button" className="text-sm text-teal hover:underline" onClick={onBack}>
-          Back to login
+          Back to Login
         </button>
       </form>
     )
@@ -140,7 +148,7 @@ export function ForgotPasswordForm({
         {submitting ? 'Sending…' : 'Send Reset Link'}
       </Button>
       <button type="button" className="text-sm text-teal hover:underline" onClick={onBack}>
-        Back to login
+        Back to Login
       </button>
     </form>
   )

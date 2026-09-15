@@ -78,26 +78,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     completeSession(session.token, session.user, payload.rememberMe)
   }, [completeSession])
 
-  const register = useCallback(
-    async (payload: RegisterPayload): Promise<RegisterOutcome> => {
-      const data = await authService.register({
-        name: `${payload.firstName} ${payload.lastName}`.trim(),
-        email: payload.email,
-        password: payload.password,
-        phone: payload.phone.trim() || undefined,
-      })
-      if (data?.token && data.user) {
-        completeSession(data.token, data.user, true)
-        return { status: 'authenticated' }
-      }
-      return {
-        status: 'verification_required',
-        message:
-          'Please verify your email before signing in. Check your inbox for the activation link.',
-      }
-    },
-    [completeSession],
-  )
+  const register = useCallback(async (payload: RegisterPayload): Promise<RegisterOutcome> => {
+    const data = await authService.register({
+      name: `${payload.firstName.trim()} ${payload.lastName.trim()}`.trim(),
+      email: payload.email.trim(),
+      password: payload.password,
+      phone: payload.phone.trim() || undefined,
+    })
+    return {
+      status: 'registered',
+      needsVerification: Boolean(data?.activation_token) || !data?.token,
+    }
+  }, [])
 
   const logout = useCallback(async () => {
     try {
