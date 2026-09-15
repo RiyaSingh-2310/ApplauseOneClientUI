@@ -15,7 +15,7 @@ export function RegistrationProgress({
       <div className="h-1.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
         <div className="h-full rounded-full bg-teal transition-[width] duration-300" style={{ width: `${progress}%` }} />
       </div>
-      <ol className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Registration progress">
+      <ol className="mt-4 grid grid-cols-6 gap-1 sm:gap-2" aria-label="Registration progress, 6 steps">
         {registerSteps.map((item) => {
           const current = item.id === step
           const complete = item.id < step
@@ -26,7 +26,7 @@ export function RegistrationProgress({
                 onClick={() => onSelect(item.id)}
                 disabled={item.id > step}
                 className={cn(
-                  'flex w-full flex-col items-center gap-1.5 rounded-xl px-1 py-1 text-center text-[11px] sm:text-xs',
+                  'flex w-full flex-col items-center gap-1 rounded-xl px-0.5 py-1 text-center text-[10px] sm:px-1 sm:text-xs',
                   current && 'font-semibold text-teal',
                   complete && 'text-ink',
                   !current && !complete && 'text-muted',

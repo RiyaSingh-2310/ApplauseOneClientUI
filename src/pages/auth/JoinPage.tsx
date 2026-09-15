@@ -90,6 +90,10 @@ export function JoinPage() {
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!isLast) {
+      goNext()
+      return
+    }
     void submitForm()
   }
 
@@ -162,7 +166,7 @@ export function JoinPage() {
                   exit={{ opacity: 0, x: -12 }}
                   transition={{ duration }}
                 >
-                  {isLast ? (
+                  {step === 5 ? (
                     <ReviewStep form={form} steps={steps} />
                   ) : step === 0 ? (
                     <PersonalStep form={form} errors={errors} update={update} />
@@ -184,7 +188,7 @@ export function JoinPage() {
                 </Button>
                 {isLast ? (
                   <Button type="submit" disabled={submitting} className="sm:min-w-64">
-                    {submitting ? 'Creating your profile…' : 'Join Consumer Panel'}
+                    {submitting ? 'Creating your profile…' : 'Complete Registration'}
                   </Button>
                 ) : (
                   <Button type="button" onClick={goNext}>

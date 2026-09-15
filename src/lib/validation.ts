@@ -16,7 +16,7 @@ export const registerSteps = [
   { id: 2, title: 'Lifestyle', heading: 'Shopping & Lifestyle', copy: 'Tell us how you shop and take surveys.' },
   { id: 3, title: 'Preferences', heading: 'Survey Preferences', copy: 'How you like to participate.' },
   { id: 4, title: 'Privacy', heading: 'Community & Privacy', copy: 'Communication choices and required consents.' },
-  { id: 5, title: 'Complete', heading: 'Review & Submit', copy: 'Confirm your profile, then join the panel.' },
+  { id: 5, title: 'Review', heading: 'Review your details', copy: 'Confirm everything looks right, then complete registration.' },
 ] as const
 
 export const JOIN_API_STEPS = [2, 3, 4] as const
