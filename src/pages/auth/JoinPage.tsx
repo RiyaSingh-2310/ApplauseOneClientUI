@@ -28,6 +28,7 @@ import {
   validateRegisterForm,
   validateRegisterStep,
 } from '@/lib/validation'
+import { authService, DUPLICATE_EMAIL_MESSAGE } from '@/services/auth.service'
 import { ApiRequestError } from '@/services/errors'
 import { onboardingService } from '@/services/onboarding.service'
 import type { RegisterPayload } from '@/types/auth'
@@ -43,18 +44,25 @@ export function JoinPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [checkingEmail, setCheckingEmail] = useState(false)
+  const [emailAvailabilityError, setEmailAvailabilityError] = useState('')
   const [success, setSuccess] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState('')
   const stepSectionRef = useRef<HTMLDivElement>(null)
   const skipInitialScroll = useRef(true)
+  const emailAvailableRef = useRef('')
   const current = registerSteps[step] ?? registerSteps[0]
   const isLast = step === registerSteps.length - 1
   const steps = questionsState.data?.steps ?? []
   const stepValid = isRegisterStepValid(form, step, steps)
   const formValid = isRegisterFormValid(form, steps)
   const liveErrors = isLast ? validateRegisterForm(form, steps) : validateRegisterStep(form, step, steps)
-  const shownErrors = step === 4 || isLast || Object.keys(errors).length ? liveErrors : errors
+  const baseErrors = step === 4 || isLast || Object.keys(errors).length ? liveErrors : errors
+  const shownErrors =
+    emailAvailabilityError && !baseErrors.email
+      ? { ...baseErrors, email: emailAvailabilityError }
+      : baseErrors
 
   useEffect(() => {
     if (skipInitialScroll.current) {
@@ -69,6 +77,10 @@ export function JoinPage() {
 
   function update<K extends keyof RegisterPayload>(key: K, value: RegisterPayload[K]) {
     setForm((currentForm) => ({ ...currentForm, [key]: value }))
+    if (key === 'email') {
+      emailAvailableRef.current = ''
+      setEmailAvailabilityError('')
+    }
   }
 
   function updateAnswer(questionId: number, value: string | string[]) {
@@ -78,11 +90,42 @@ export function JoinPage() {
     }))
   }
 
-  function goNext() {
+  async function goNext() {
+    if (checkingEmail || submitting) return
     const nextErrors = validateRegisterStep(form, step, steps)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length) return
+
+    // Duplicate-email check only on the Personal step (email field), after local format validation.
+    // Phone is never uniqueness-checked. No keystroke/debounce API calls.
+    if (step === 0) {
+      const email = form.email.trim()
+      if (emailAvailableRef.current !== email.toLowerCase()) {
+        setCheckingEmail(true)
+        setFormError('')
+        setEmailAvailabilityError('')
+        try {
+          const result = await authService.checkEmailAvailable(email)
+          if (!result.available) {
+            setEmailAvailabilityError(DUPLICATE_EMAIL_MESSAGE)
+            return
+          }
+          emailAvailableRef.current = email.toLowerCase()
+        } catch (error) {
+          setFormError(
+            error instanceof ApiRequestError
+              ? error.message
+              : 'Unable to verify email availability. Please try again.',
+          )
+          return
+        } finally {
+          setCheckingEmail(false)
+        }
+      }
+    }
+
     setFormError('')
+    setEmailAvailabilityError('')
     setErrors({})
     setStep((currentStep) => Math.min(currentStep + 1, registerSteps.length - 1))
   }
@@ -112,12 +155,16 @@ export function JoinPage() {
     } catch (error) {
       const requestError = error instanceof ApiRequestError ? error : null
       if (requestError?.status === 409) {
-        setFormError('An account with this email already exists. Try logging in or use a different email.')
+        // Safety check: race between availability probe and final register.
+        emailAvailableRef.current = ''
+        setEmailAvailabilityError(DUPLICATE_EMAIL_MESSAGE)
+        setFormError('')
+        setStep(0)
       } else {
         setFormError(requestError?.message ?? 'Something went wrong while creating your profile. Please try again.')
-      }
-      if (requestError?.fieldErrors) {
-        setErrors((currentErrors) => ({ ...currentErrors, ...requestError.fieldErrors }))
+        if (requestError?.fieldErrors) {
+          setErrors((currentErrors) => ({ ...currentErrors, ...requestError.fieldErrors }))
+        }
       }
     } finally {
       setSubmitting(false)
@@ -127,7 +174,7 @@ export function JoinPage() {
   function onSubmit(event: FormEvent) {
     event.preventDefault()
     if (!isLast) {
-      goNext()
+      void goNext()
       return
     }
     if (!formValid) {
@@ -230,7 +277,7 @@ export function JoinPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={step === 0 || submitting}
+                  disabled={step === 0 || submitting || checkingEmail}
                   onClick={() => {
                     setErrors({})
                     setStep((currentStep) => currentStep - 1)
@@ -239,17 +286,17 @@ export function JoinPage() {
                   Back
                 </Button>
                 {isLast ? (
-                  <Button type="submit" disabled={submitting || !formValid} className="sm:min-w-64">
+                  <Button type="submit" disabled={submitting || checkingEmail || !formValid} className="sm:min-w-64">
                     {submitting ? 'Creating your profile…' : 'Complete Registration'}
                   </Button>
                 ) : (
                   <Button
                     type="button"
-                    disabled={!stepValid}
+                    disabled={!stepValid || checkingEmail || submitting}
                     title={stepValid ? undefined : 'Complete all required fields to continue'}
-                    onClick={goNext}
+                    onClick={() => void goNext()}
                   >
-                    Continue
+                    {checkingEmail && step === 0 ? 'Checking email…' : 'Continue'}
                   </Button>
                 )}
               </div>

@@ -29,6 +29,13 @@ export interface AuthSuccessData {
   email_error?: string
 }
 
+/** Response data from POST /admin/test-email (documented, no auth). */
+export interface TestEmailData {
+  email: string
+  registered: boolean
+  mail_driver?: string
+}
+
 export interface DropdownOption {
   id: number
   name: string

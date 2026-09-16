@@ -1,7 +1,10 @@
 import type { AuthSession, ForgotPasswordPayload, LoginPayload, ResetPasswordPayload } from '@/types/auth'
-import type { AuthSuccessData, Panelist } from '@/types/api'
+import type { AuthSuccessData, Panelist, TestEmailData } from '@/types/api'
 import { ApiRequestError } from './errors'
 import { apiRequest } from './http'
+
+export const DUPLICATE_EMAIL_MESSAGE =
+  'This email is already registered. Please use a different email address.'
 
 const verifyInFlight = new Map<string, Promise<undefined>>()
 
@@ -33,6 +36,23 @@ export const authService = {
       body: { email: payload.email, password: payload.password },
       auth: false,
     }).then((data) => requireSession(data, 'Login did not return a session.'))
+  },
+  /**
+   * Email uniqueness check using the documented public endpoint POST /admin/test-email,
+   * which returns `registered: true|false`. There is no dedicated /auth/check-email route.
+   * Call only after local format validation, and only on Continue (not per keystroke).
+   */
+  checkEmailAvailable(email: string) {
+    return apiRequest<TestEmailData>('/admin/test-email', {
+      method: 'POST',
+      body: { email: email.trim() },
+      auth: false,
+    }).then((data) => {
+      if (!data || typeof data.registered !== 'boolean') {
+        throw new ApiRequestError({ message: 'Unable to verify email availability. Please try again.' })
+      }
+      return { available: data.registered === false }
+    })
   },
   register(payload: { name: string; email: string; password: string; phone?: string }) {
     const body: Record<string, string> = {
