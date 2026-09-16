@@ -1,13 +1,13 @@
 import { Badge } from '@/components/ui/badge'
-import type { ProjectStatus } from '@/types/common'
+import type { SurveyAssignmentStatus } from '@/types/api'
+import type { RewardCreditState } from '@/types/project'
 
-const projectTone = {
-  new: 'info',
-  'in-progress': 'warning',
-  completed: 'success',
-  expired: 'muted',
-  closed: 'muted',
-} as const
+const projectTone: Record<SurveyAssignmentStatus, 'info' | 'success' | 'muted' | 'danger'> = {
+  active: 'info',
+  complete: 'success',
+  terminate: 'danger',
+  quota_full: 'muted',
+}
 
 const requestTone: Record<string, 'warning' | 'info' | 'danger' | 'success' | 'default' | 'muted'> = {
   pending: 'warning',
@@ -18,19 +18,25 @@ const requestTone: Record<string, 'warning' | 'info' | 'danger' | 'success' | 'd
 }
 
 const labels: Record<string, string> = {
-  new: 'New',
-  'in-progress': 'In progress',
-  completed: 'Completed',
-  expired: 'Expired',
-  closed: 'Closed',
+  active: 'Active',
+  complete: 'Complete',
+  terminate: 'Terminate',
+  quota_full: 'Quota full',
   pending: 'Pending',
+  credited: 'Credited',
   approved: 'Approved',
   rejected: 'Rejected',
   posted: 'Posted',
+  completed: 'Completed',
 }
 
-export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
-  return <Badge tone={projectTone[status]}>{labels[status] ?? status}</Badge>
+export function ProjectStatusBadge({ status }: { status: string }) {
+  const tone = status in projectTone ? projectTone[status as SurveyAssignmentStatus] : 'muted'
+  return <Badge tone={tone}>{labels[status] ?? status.replaceAll('_', ' ')}</Badge>
+}
+
+export function RewardStatusBadge({ status }: { status: RewardCreditState }) {
+  return <Badge tone={status === 'credited' ? 'success' : 'warning'}>{labels[status] ?? status}</Badge>
 }
 
 export function RequestStatusBadge({ status }: { status: string }) {

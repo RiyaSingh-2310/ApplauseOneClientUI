@@ -1,4 +1,4 @@
-import { Gift, History, UserRound } from 'lucide-react'
+import { ClipboardList, Gift, History, UserRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { paths } from '@/config/paths'
@@ -6,6 +6,7 @@ import { cardLiftClass } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 const actions = [
+  { to: paths.surveys, label: 'Assigned Surveys', copy: 'Open studies assigned to your account.', icon: ClipboardList },
   { to: paths.rewards, label: 'Choose a Reward', copy: 'Request a payout with your available points.', icon: Gift },
   { to: paths.history, label: 'View History', copy: 'See reward requests and points in one place.', icon: History },
   { to: paths.settings, label: 'Manage Profile', copy: 'Keep your account details up to date.', icon: UserRound },

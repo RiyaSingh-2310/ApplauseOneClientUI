@@ -98,7 +98,7 @@ export function composeDashboard(
       return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
     })
     .reduce((sum, item) => sum + asNumber(item.reward_points), 0)
-  const openProjects = projects.filter((item) => item.status === 'new' || item.status === 'in-progress')
+  const openProjects = projects.filter((item) => item.status === 'active')
 
   return {
     summary: {

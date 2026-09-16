@@ -61,6 +61,7 @@ export const publicNav = [
 
 export const memberNav = [
   { to: '/dashboard', label: 'Dashboard', end: true },
+  { to: '/surveys', label: 'Surveys' },
   { to: '/', label: 'Home', end: true },
   { to: '/rewards', label: 'Rewards' },
   { to: '/history', label: 'History' },

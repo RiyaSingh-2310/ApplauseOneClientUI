@@ -107,6 +107,23 @@ export interface RewardTransactionRecord {
   created_at: string
 }
 
+export type SurveyAssignmentStatus = 'active' | 'complete' | 'terminate' | 'quota_full'
+
+export interface SurveyAssignment {
+  id: number
+  panelist_id: number
+  survey_name: string | null
+  survey_url: string | null
+  reward_points: number
+  status: SurveyAssignmentStatus
+  completed_at: string | null
+  remark: string | null
+  created_by: number | null
+  updated_by: number | null
+  created_at: string
+  updated_at: string | null
+}
+
 export interface RewardRequestRecord {
   id: string
   reward_points: string | number

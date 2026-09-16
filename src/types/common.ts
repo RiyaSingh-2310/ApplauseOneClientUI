@@ -15,8 +15,6 @@ export type RewardCategory = 'cash' | 'gift-card' | 'digital' | 'charity'
 
 export type RewardAvailability = 'available' | 'coming-soon' | 'unavailable'
 
-export type ProjectStatus = 'new' | 'in-progress' | 'completed' | 'expired' | 'closed'
-
 export type RewardRequestStatus = 'pending' | 'approved' | 'rejected' | 'completed'
 
 export type TransactionType = 'earned' | 'redeemed' | 'bonus' | 'adjustment'

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 import { motion } from 'motion/react'
 import { ArrowRight, Coins, Gift, Sparkles } from 'lucide-react'
 import { ActivityList } from '@/components/dashboard/ActivityList'
@@ -27,6 +28,17 @@ export function DashboardPage() {
   const transactionsQuery = useAsync(() => rewardService.getTransactions(), 'transactions')
   const requestsQuery = useAsync(() => rewardRequestService.listRecords(), 'requests')
   const projectsQuery = useAsync(() => projectService.getAssigned(), 'projects')
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === 'visible') {
+        projectsQuery.reload()
+        balanceQuery.reload()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [projectsQuery.reload, balanceQuery.reload])
 
   const summary =
     balanceQuery.data &&
@@ -145,9 +157,14 @@ export function DashboardPage() {
         </AnimatedSection>
 
         <AnimatedSection delay={0.04}>
-          <div className="mb-4">
-            <h2 className="font-display text-2xl text-ink sm:text-3xl">Recent projects</h2>
-            <p className="mt-1 text-sm text-ink-soft">Opportunities assigned to your profile will appear here.</p>
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="font-display text-2xl text-ink sm:text-3xl">Recent projects</h2>
+              <p className="mt-1 text-sm text-ink-soft">Surveys assigned to your account appear here.</p>
+            </div>
+            <Link to={paths.surveys} className="text-sm font-medium text-teal hover:underline">
+              See all
+            </Link>
           </div>
           {projectsQuery.loading ? <LoadingSkeleton rows={2} /> : null}
           {projectsQuery.error ? (
@@ -155,8 +172,8 @@ export function DashboardPage() {
           ) : null}
           {!projectsQuery.loading && !projectsQuery.error && projects.length === 0 ? (
             <EmptyState
-              title="No projects assigned yet."
-              description="When a research opportunity is matched to your profile, it will show up here."
+              title="No surveys assigned yet"
+              description="When an administrator assigns a survey to your account, it will show up here."
             />
           ) : null}
           {!projectsQuery.loading && !projectsQuery.error && projects.length > 0 ? (

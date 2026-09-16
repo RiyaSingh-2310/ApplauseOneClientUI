@@ -10,6 +10,7 @@ import { VerifyPage } from '@/pages/auth/VerifyPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { DashboardPage } from '@/pages/panelist/DashboardPage'
 import { HistoryPage } from '@/pages/panelist/HistoryPage'
+import { ProjectsPage } from '@/pages/panelist/ProjectsPage'
 import { SettingsPage } from '@/pages/panelist/SettingsPage'
 import { AboutPage } from '@/pages/public/AboutPage'
 import { ContactPage } from '@/pages/public/ContactPage'
@@ -60,7 +61,7 @@ export default function App() {
               <Route path={paths.dashboard} element={<DashboardPage />} />
               <Route path={paths.history} element={<HistoryPage />} />
               <Route path={paths.settings} element={<SettingsPage />} />
-              <Route path={paths.surveys} element={<Navigate to={paths.dashboard} replace />} />
+              <Route path={paths.surveys} element={<ProjectsPage />} />
             </Route>
           </Route>
 
