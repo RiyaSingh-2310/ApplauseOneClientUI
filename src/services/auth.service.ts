@@ -38,9 +38,10 @@ export const authService = {
     }).then((data) => requireSession(data, 'Login did not return a session.'))
   },
   /**
-   * Email uniqueness check using the documented public endpoint POST /admin/test-email,
-   * which returns `registered: true|false`. There is no dedicated /auth/check-email route.
-   * Call only after local format validation, and only on Continue (not per keystroke).
+   * ApplauseOneAPI has no /auth/check-email. The only public uniqueness signal without
+   * creating a panelist is POST /admin/test-email → data.registered (AdminController::testEmail).
+   * That endpoint also sends a test message via Mailer::sendTest (backend side effect).
+   * Final POST /auth/register still returns 409 when the email is taken.
    */
   checkEmailAvailable(email: string) {
     return apiRequest<TestEmailData>('/admin/test-email', {
@@ -61,14 +62,14 @@ export const authService = {
       password: payload.password,
     }
     if (payload.phone) body.phone = payload.phone
-    // POST /auth/register only. Backend sends the activation email.
+    // AuthController::register → Mailer::sendActivation. Client never sends email itself.
     // Never auto-call /auth/resend-activation. Never persist a registration token as a session.
     return apiRequest<AuthSuccessData | undefined>('/auth/register', {
       method: 'POST',
       body,
       auth: false,
     }).then((data) => ({
-      // Strict: only treat as sent when backend sets email_sent === true.
+      // Strict: only treat as sent when backend sets data.email_sent === true.
       emailSent: data?.email_sent === true,
       emailError: typeof data?.email_error === 'string' ? data.email_error : undefined,
     }))
@@ -76,6 +77,7 @@ export const authService = {
   verify(token: string) {
     const existing = verifyInFlight.get(token)
     if (existing) return existing
+    // AuthController::verify → activateAccount. Do not store returned token (no auto-login).
     const request = apiRequest<AuthSuccessData | undefined>('/auth/verify', {
       method: 'POST',
       body: { token },
@@ -90,19 +92,13 @@ export const authService = {
     return request
   },
   resendActivation(email: string) {
+    // AuthController::resendActivation → Mailer::sendActivation.
+    // Success: 200 with message only (no email_sent field). Failure while sending: 502.
     return apiRequest<AuthSuccessData | undefined>('/auth/resend-activation', {
       method: 'POST',
       body: { email },
       auth: false,
-    }).then((data) => {
-      if (data && data.email_sent === false) {
-        throw new ApiRequestError(
-          { message: data.email_error || 'Could not send activation email. Please try again later.' },
-          502,
-        )
-      }
-      return { emailSent: data?.email_sent !== false }
-    })
+    }).then(() => ({ emailSent: true as const }))
   },
   forgotPassword(payload: ForgotPasswordPayload) {
     return apiRequest<{ reset_token?: string }>('/auth/forgot-password', {

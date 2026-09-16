@@ -71,7 +71,7 @@ export function RegistrationSuccess({
         <h1 className="font-display mt-3 text-4xl text-ink">{heading}</h1>
         <p className="mt-4 text-ink-soft">
           {delivered ? (
-            <>We’ve sent a verification email{email ? ` to ${email}` : ''}. Open the message and click Verify Email to activate your account.</>
+            <>We’ve sent a verification email{email ? ` to ${email}` : ''}. Open the message and click Activate Account to verify your account.</>
           ) : (
             <>
               We created your account{email ? ` for ${email}` : ''}, but we couldn’t send the activation email right now.
