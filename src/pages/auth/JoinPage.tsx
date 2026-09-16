@@ -46,7 +46,7 @@ export function JoinPage() {
   const [success, setSuccess] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState('')
-  const stepSectionRef = useRef<HTMLHeadingElement>(null)
+  const stepSectionRef = useRef<HTMLDivElement>(null)
   const skipInitialScroll = useRef(true)
   const current = registerSteps[step] ?? registerSteps[0]
   const isLast = step === registerSteps.length - 1
@@ -175,9 +175,7 @@ export function JoinPage() {
           ) : null}
           {!questionsState.loading && !questionsState.error && steps.length ? (
             <form className="overflow-hidden rounded-3xl border border-line bg-white p-5 shadow-card sm:p-8" onSubmit={onSubmit} noValidate>
-              <h2 ref={stepSectionRef} className="font-display scroll-mt-24 text-3xl text-ink sm:text-4xl">
-                Create Your Consumer Profile
-              </h2>
+              <h2 className="font-display text-3xl text-ink sm:text-4xl">Create Your Consumer Profile</h2>
               <p className="mt-2 text-sm leading-6 text-ink-soft">Tell us about yourself to receive relevant survey opportunities.</p>
               <div>
                 <div className="mt-6">
@@ -191,7 +189,7 @@ export function JoinPage() {
                   }}
                 />
               </div>
-              <div className="mt-8 border-t border-line pt-6">
+              <div ref={stepSectionRef} className="mt-8 scroll-mt-24 border-t border-line pt-6">
                 <p className="text-sm text-muted">{current.copy}</p>
                 <h3 className="font-display mt-1 text-2xl text-ink">{current.heading}</h3>
               </div>

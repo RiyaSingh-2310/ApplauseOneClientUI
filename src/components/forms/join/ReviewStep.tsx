@@ -44,7 +44,6 @@ export function ReviewStep({ form, steps }: { form: RegisterPayload; steps: Onbo
       <Section title="Personal Information">
         <Row label="First name" value={form.firstName} />
         <Row label="Last name" value={form.lastName} />
-        <Row label="Password" value={form.password ? 'Saved (hidden)' : '—'} />
       </Section>
       <Section title="Contact Information">
         <Row label="Email" value={form.email} />
