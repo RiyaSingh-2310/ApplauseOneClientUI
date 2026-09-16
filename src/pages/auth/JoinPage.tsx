@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button'
 import { joinIncentive, joinTrust } from '@/config/brand'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
-import { questionsForApiStep } from '@/lib/apiMap'
+import { buildOnboardingPayload, flattenQuestions, questionsForApiStep } from '@/lib/apiMap'
+import { savePendingOnboarding } from '@/lib/pendingOnboarding'
 import { useMotionConfig } from '@/lib/motion'
 import {
   emptyRegisterForm,
@@ -74,10 +75,22 @@ export function JoinPage() {
     setFormError('')
     try {
       await register(form)
+      savePendingOnboarding(
+        form.email,
+        buildOnboardingPayload(flattenQuestions(steps), form.answers, {
+          acceptTerms: form.acceptTerms,
+          acceptPrivacy: form.acceptPrivacy,
+          emailInvitations: form.emailInvitations,
+        }),
+      )
       setSuccess(true)
     } catch (error) {
       const requestError = error instanceof ApiRequestError ? error : null
-      setFormError(requestError?.message ?? 'Something went wrong while creating your profile. Please try again.')
+      if (requestError?.status === 409) {
+        setFormError('An account with this email already exists. Try logging in or use a different email.')
+      } else {
+        setFormError(requestError?.message ?? 'Something went wrong while creating your profile. Please try again.')
+      }
       if (requestError?.fieldErrors) {
         setErrors((currentErrors) => ({ ...currentErrors, ...requestError.fieldErrors }))
       }

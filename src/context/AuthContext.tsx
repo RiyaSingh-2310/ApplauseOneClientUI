@@ -1,5 +1,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { takePendingOnboarding } from '@/lib/pendingOnboarding'
 import { authService } from '@/services/auth.service'
+import { onboardingService } from '@/services/onboarding.service'
 import { ApiRequestError, UNAUTHORIZED_EVENT } from '@/services/errors'
 import { clearToken, readToken, writeToken } from '@/services/token'
 import type { AuthUser, LoginPayload, RegisterOutcome, RegisterPayload } from '@/types/auth'
@@ -45,7 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authService
       .me()
       .then((nextUser) => {
-        if (!cancelled) setUser(nextUser)
+        if (cancelled) return
+        if (nextUser.is_verified === 0) {
+          clearToken()
+          setUser(null)
+          return
+        }
+        setUser(nextUser)
       })
       .catch(() => {
         clearToken()
@@ -76,6 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (payload: LoginPayload) => {
     const session = await authService.login({ email: payload.email, password: payload.password })
     completeSession(session.token, session.user, payload.rememberMe)
+    const pending = takePendingOnboarding(session.user.email)
+    if (pending.length) {
+      try {
+        await onboardingService.saveAnswers(pending)
+      } catch {
+        /* Profile settings can retry; login must still succeed. */
+      }
+    }
   }, [completeSession])
 
   const register = useCallback(async (payload: RegisterPayload): Promise<RegisterOutcome> => {

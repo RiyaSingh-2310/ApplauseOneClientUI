@@ -8,6 +8,21 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
 import { EMAIL_PATTERN } from '@/lib/validation'
 import { ApiRequestError } from '@/services/errors'
+import { authService } from '@/services/auth.service'
+
+function unverifiedMessage(error: ApiRequestError | null) {
+  if (!error) return ''
+  const message = error.message.toLowerCase()
+  const mentionsVerify =
+    message.includes('verify') ||
+    message.includes('not active') ||
+    message.includes('inactive') ||
+    message.includes('activation')
+  if (error.status === 403 || (error.status !== 401 && mentionsVerify) || (error.status === 401 && mentionsVerify)) {
+    return 'Please verify your email before logging in.'
+  }
+  return ''
+}
 
 export function LoginForm({
   idPrefix = 'login',
@@ -27,6 +42,9 @@ export function LoginForm({
   const [rememberMe, setRememberMe] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState('')
+  const [needsVerification, setNeedsVerification] = useState(false)
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [resendMessage, setResendMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   async function onSubmit(event: FormEvent) {
@@ -40,14 +58,18 @@ export function LoginForm({
 
     setSubmitting(true)
     setFormError('')
+    setNeedsVerification(false)
+    setResendMessage('')
     try {
       await login({ email: email.trim(), password, rememberMe })
       navigate(from.startsWith('/') ? from : '/dashboard', { replace: true })
     } catch (error) {
       const requestError = error instanceof ApiRequestError ? error : null
       if (requestError?.fieldErrors) setErrors((current) => ({ ...current, ...requestError.fieldErrors }))
-      if (requestError?.status === 403) {
-        setFormError('Please verify your email before signing in. Check your inbox for the activation link.')
+      const verifyCopy = unverifiedMessage(requestError)
+      if (verifyCopy) {
+        setNeedsVerification(true)
+        setFormError(verifyCopy)
       } else if (requestError?.status === 401) {
         setFormError('Those details did not match our records. Please try again.')
       } else {
@@ -66,6 +88,33 @@ export function LoginForm({
         <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
           {formError}
         </p>
+      ) : null}
+      {needsVerification ? (
+        <div className="rounded-xl bg-teal-soft/60 px-4 py-3 text-sm text-teal-deep">
+          <p>Check your inbox for the verification email, then try logging in again.</p>
+          <button
+            type="button"
+            className="mt-2 font-medium underline"
+            disabled={resendState === 'sending' || !email.trim()}
+            onClick={async () => {
+              setResendState('sending')
+              setResendMessage('')
+              try {
+                await authService.resendActivation(email.trim())
+                setResendState('sent')
+                setResendMessage('If this account is not yet active, we sent another verification email.')
+              } catch (error) {
+                setResendState('error')
+                setResendMessage(
+                  error instanceof ApiRequestError ? error.message : 'We could not resend the email. Please try again.',
+                )
+              }
+            }}
+          >
+            {resendState === 'sending' ? 'Sending…' : 'Resend verification email'}
+          </button>
+          {resendMessage ? <p className="mt-2">{resendMessage}</p> : null}
+        </div>
       ) : null}
       <Field label="Email Address" htmlFor={`${idPrefix}-email`} required error={errors.email}>
         <Input

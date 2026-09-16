@@ -3,15 +3,25 @@ import type { AuthSuccessData, Panelist } from '@/types/api'
 import { ApiRequestError } from './errors'
 import { apiRequest } from './http'
 
+const verifyInFlight = new Map<string, Promise<AuthSuccessData | undefined>>()
+
 function requireUser(data: Panelist | { user: Panelist } | undefined): Panelist {
   if (data && typeof data === 'object' && 'user' in data && data.user?.email) return data.user
   if (data && typeof data === 'object' && 'email' in data && data.email) return data
   throw new ApiRequestError({ message: 'Unable to load your profile.' })
 }
 
+function isUnverifiedPanelist(user: Panelist) {
+  const status = String(user.status ?? '').toLowerCase()
+  return user.is_verified === 0 || status === 'inactive' || status === 'pending'
+}
+
 function requireSession(data: AuthSuccessData | undefined, fallback: string): AuthSession {
   if (!data?.token || !data.user) {
     throw new ApiRequestError({ message: fallback })
+  }
+  if (isUnverifiedPanelist(data.user)) {
+    throw new ApiRequestError({ message: 'Please verify your email before logging in.' }, 403)
   }
   return { token: data.token, user: data.user }
 }
@@ -31,16 +41,30 @@ export const authService = {
       password: payload.password,
     }
     if (payload.phone) body.phone = payload.phone
-    return apiRequest<AuthSuccessData>('/auth/register', {
+    return apiRequest<AuthSuccessData | undefined>('/auth/register', {
       method: 'POST',
       body,
       auth: false,
-    })
+    }).then(() => undefined)
   },
   verify(token: string) {
-    return apiRequest<AuthSuccessData | undefined>('/auth/verify', {
+    const existing = verifyInFlight.get(token)
+    if (existing) return existing
+    const request = apiRequest<AuthSuccessData | undefined>('/auth/verify', {
       method: 'POST',
       body: { token },
+      auth: false,
+    }).catch((error) => {
+      verifyInFlight.delete(token)
+      throw error
+    })
+    verifyInFlight.set(token, request)
+    return request
+  },
+  resendActivation(email: string) {
+    return apiRequest<unknown>('/auth/resend-activation', {
+      method: 'POST',
+      body: { email },
       auth: false,
     })
   },

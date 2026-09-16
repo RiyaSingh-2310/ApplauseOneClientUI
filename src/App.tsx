@@ -50,6 +50,7 @@ export default function App() {
             <Route path={paths.contact} element={<ContactPage />} />
             <Route path={paths.join} element={<JoinPage />} />
             <Route path={paths.verifyEmail} element={<VerifyPage />} />
+            <Route path={`${paths.verifyEmail}/:token`} element={<VerifyPage />} />
             <Route path="/verify" element={<VerifySearchRedirect />} />
             <Route path="/verify/:token" element={<VerifyPathRedirect />} />
             <Route element={<GuestRoute />}>

@@ -2,15 +2,23 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, LoaderCircle, MailX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Field } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { paths } from '@/config/paths'
 import { readActivationToken } from '@/lib/activationToken'
+import { EMAIL_PATTERN } from '@/lib/validation'
 import { ApiRequestError } from '@/services/errors'
 import { authService } from '@/services/auth.service'
 
 function isAlreadyVerified(error: unknown) {
   if (!(error instanceof ApiRequestError)) return false
   const message = error.message.toLowerCase()
-  return error.status === 409 || message.includes('already verified') || message.includes('already activated')
+  return (
+    error.status === 409 ||
+    message.includes('already verified') ||
+    message.includes('already activated') ||
+    message.includes('already active')
+  )
 }
 
 export function VerifyPage() {
@@ -24,6 +32,9 @@ export function VerifyPage() {
     token ? 'loading' : 'missing',
   )
   const [retry, setRetry] = useState(0)
+  const [email, setEmail] = useState('')
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [resendMessage, setResendMessage] = useState('')
 
   useEffect(() => {
     if (!token) {
@@ -55,6 +66,20 @@ export function VerifyPage() {
     }
   }, [token, retry])
 
+  async function resend() {
+    if (!EMAIL_PATTERN.test(email.trim()) || resendState === 'sending') return
+    setResendState('sending')
+    setResendMessage('')
+    try {
+      await authService.resendActivation(email.trim())
+      setResendState('sent')
+      setResendMessage('If this account exists and is not yet active, we sent a new verification email.')
+    } catch (error) {
+      setResendState('error')
+      setResendMessage(error instanceof ApiRequestError ? error.message : 'We could not resend the email. Please try again.')
+    }
+  }
+
   const copy =
     status === 'loading'
       ? {
@@ -64,7 +89,7 @@ export function VerifyPage() {
       : status === 'success'
         ? {
             title: 'Email Verified Successfully',
-            body: 'Your email has been verified. You can now log in to your Applause One account.',
+            body: 'Your email has been verified successfully. You can now log in to your Applause One account.',
           }
         : status === 'already'
           ? {
@@ -74,23 +99,26 @@ export function VerifyPage() {
           : status === 'expired'
             ? {
                 title: 'Verification Link Expired',
-                body: 'This verification link is no longer valid. Please register again or contact support if you still need access.',
+                body: 'This verification link has expired. Enter your email below to request a new activation link.',
               }
             : status === 'error'
               ? {
                   title: 'We couldn’t verify your email',
                   body: 'The connection failed or the server is unavailable. Please try again in a moment.',
                 }
-              : {
-                  title: 'Verification Link Invalid or Expired',
-                  body:
-                    status === 'missing'
-                      ? 'This page needs a valid verification link from your email.'
-                      : 'We could not activate your account with this link. It may be invalid or already used.',
-                }
+              : status === 'missing'
+                ? {
+                    title: 'Verification Link Invalid',
+                    body: 'This page needs a valid verification link from your email.',
+                  }
+                : {
+                    title: 'Verification Link Invalid',
+                    body: 'This verification link is invalid or no longer available.',
+                  }
 
   const showLogin = status !== 'loading'
   const loginLabel = status === 'success' || status === 'already' ? 'Go to Login' : 'Back to Login'
+  const showResend = status === 'expired' || status === 'invalid' || status === 'missing'
 
   return (
     <div className="px-4 py-16 sm:px-6">
@@ -105,11 +133,11 @@ export function VerifyPage() {
           }`}
         >
           {status === 'loading' ? (
-            <LoaderCircle className="size-7 animate-spin" />
+            <LoaderCircle className="size-7 animate-spin" aria-hidden="true" />
           ) : status === 'success' || status === 'already' ? (
-            <CheckCircle2 className="size-7" />
+            <CheckCircle2 className="size-7" aria-hidden="true" />
           ) : (
-            <MailX className="size-7" />
+            <MailX className="size-7" aria-hidden="true" />
           )}
         </div>
         <h1 className="font-display mt-5 text-3xl text-ink">{copy.title}</h1>
@@ -119,8 +147,35 @@ export function VerifyPage() {
             Try again
           </Button>
         ) : null}
+        {showResend ? (
+          <form
+            className="mt-6 text-left"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void resend()
+            }}
+          >
+            <Field label="Email Address" htmlFor="resend-activation-email" required>
+              <Input
+                id="resend-activation-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </Field>
+            {resendMessage ? (
+              <p className={`mt-2 text-sm ${resendState === 'error' ? 'text-danger' : 'text-teal-deep'}`} role="status">
+                {resendMessage}
+              </p>
+            ) : null}
+            <Button className="mt-4 w-full" type="submit" disabled={resendState === 'sending'}>
+              {resendState === 'sending' ? 'Sending…' : 'Resend verification email'}
+            </Button>
+          </form>
+        ) : null}
         {showLogin ? (
-          <Button className={status === 'error' ? 'mt-3' : 'mt-8'} asChild>
+          <Button className={status === 'error' || showResend ? 'mt-3' : 'mt-8'} asChild>
             <Link to={paths.login}>{loginLabel}</Link>
           </Button>
         ) : null}
