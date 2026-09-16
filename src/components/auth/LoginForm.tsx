@@ -88,7 +88,7 @@ export function LoginForm({
       ) : null}
       {needsVerification ? (
         <div className="rounded-xl bg-teal-soft/60 px-4 py-3 text-sm text-teal-deep">
-          <p>Check your inbox for the verification email, then try logging in again.</p>
+          <p>Please verify your email before logging in. If you did not receive the message, resend it below.</p>
           <button
             type="button"
             className="mt-2 font-medium underline"
@@ -97,9 +97,12 @@ export function LoginForm({
               setResendState('sending')
               setResendMessage('')
               try {
-                await authService.resendActivation(email.trim())
+                const result = await authService.resendActivation(email.trim())
+                if (!result.emailSent) {
+                  throw new ApiRequestError({ message: 'Could not send activation email. Please try again later.' }, 502)
+                }
                 setResendState('sent')
-                setResendMessage('If this account is not yet active, we sent another verification email.')
+                setResendMessage(`We’ve sent a new verification email to ${email.trim()}.`)
               } catch (error) {
                 setResendState('error')
                 setResendMessage(

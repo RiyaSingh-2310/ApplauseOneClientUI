@@ -46,7 +46,7 @@ export function JoinPage() {
   const [success, setSuccess] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState('')
-  const stepSectionRef = useRef<HTMLElement>(null)
+  const stepSectionRef = useRef<HTMLHeadingElement>(null)
   const skipInitialScroll = useRef(true)
   const current = registerSteps[step] ?? registerSteps[0]
   const isLast = step === registerSteps.length - 1

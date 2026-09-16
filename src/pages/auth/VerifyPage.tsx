@@ -69,9 +69,12 @@ export function VerifyPage() {
     setResendState('sending')
     setResendMessage('')
     try {
-      await authService.resendActivation(email.trim())
+      const result = await authService.resendActivation(email.trim())
+      if (!result.emailSent) {
+        throw new ApiRequestError({ message: 'Could not send activation email. Please try again later.' }, 502)
+      }
       setResendState('sent')
-      setResendMessage('If this account exists and is not yet active, we sent a new verification email.')
+      setResendMessage('We’ve sent a new verification email. Please check your inbox and click Verify Email.')
     } catch (error) {
       setResendState('error')
       setResendMessage(error instanceof ApiRequestError ? error.message : 'We could not resend the email. Please try again.')
