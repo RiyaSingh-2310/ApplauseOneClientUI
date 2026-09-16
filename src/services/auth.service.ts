@@ -26,10 +26,6 @@ function requireSession(data: AuthSuccessData | undefined, fallback: string): Au
   return { token: data.token, user: data.user }
 }
 
-function activationEmailSent(data: AuthSuccessData | undefined) {
-  return data?.email_sent === true
-}
-
 export const authService = {
   login(payload: Pick<LoginPayload, 'email' | 'password'>) {
     return apiRequest<AuthSuccessData>('/auth/login', {
@@ -45,13 +41,16 @@ export const authService = {
       password: payload.password,
     }
     if (payload.phone) body.phone = payload.phone
+    // POST /auth/register only. Backend sends the activation email.
+    // Never auto-call /auth/resend-activation. Never persist a registration token as a session.
     return apiRequest<AuthSuccessData | undefined>('/auth/register', {
       method: 'POST',
       body,
       auth: false,
     }).then((data) => ({
-      emailSent: activationEmailSent(data),
-      emailError: data?.email_error,
+      // Strict: only treat as sent when backend sets email_sent === true.
+      emailSent: data?.email_sent === true,
+      emailError: typeof data?.email_error === 'string' ? data.email_error : undefined,
     }))
   },
   verify(token: string) {
