@@ -25,6 +25,8 @@ export interface AuthSuccessData {
   user?: Panelist
   activation_token?: string
   reset_token?: string
+  email_sent?: boolean
+  email_error?: string
 }
 
 export interface DropdownOption {

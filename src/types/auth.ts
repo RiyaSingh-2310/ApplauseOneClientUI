@@ -47,4 +47,6 @@ export interface RegisterPayload extends RegisterAccount, RegisterPersonal {
 export type RegisterOutcome = {
   status: 'registered'
   needsVerification: boolean
+  emailSent: boolean
+  emailError?: string
 }

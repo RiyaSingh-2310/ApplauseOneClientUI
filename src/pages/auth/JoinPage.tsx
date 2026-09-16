@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Lock, ShieldCheck, Sparkles, Gift } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
@@ -16,11 +16,14 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
 import { buildOnboardingPayload, flattenQuestions, questionsForApiStep } from '@/lib/apiMap'
 import { savePendingOnboarding } from '@/lib/pendingOnboarding'
+import { scrollToRegistrationStep } from '@/lib/scrollToStep'
 import { useMotionConfig } from '@/lib/motion'
 import {
   emptyRegisterForm,
   firstInvalidStep,
   JOIN_API_STEPS,
+  isRegisterFormValid,
+  isRegisterStepValid,
   registerSteps,
   validateRegisterForm,
   validateRegisterStep,
@@ -41,9 +44,28 @@ export function JoinPage() {
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const stepSectionRef = useRef<HTMLElement>(null)
+  const skipInitialScroll = useRef(true)
   const current = registerSteps[step] ?? registerSteps[0]
   const isLast = step === registerSteps.length - 1
   const steps = questionsState.data?.steps ?? []
+  const stepValid = isRegisterStepValid(form, step, steps)
+  const formValid = isRegisterFormValid(form, steps)
+  const liveErrors = isLast ? validateRegisterForm(form, steps) : validateRegisterStep(form, step, steps)
+  const shownErrors = step === 4 || isLast || Object.keys(errors).length ? liveErrors : errors
+
+  useEffect(() => {
+    if (skipInitialScroll.current) {
+      skipInitialScroll.current = false
+      return
+    }
+    const timer = window.setTimeout(() => {
+      scrollToRegistrationStep(stepSectionRef.current)
+    }, 80)
+    return () => window.clearTimeout(timer)
+  }, [step])
 
   function update<K extends keyof RegisterPayload>(key: K, value: RegisterPayload[K]) {
     setForm((currentForm) => ({ ...currentForm, [key]: value }))
@@ -61,6 +83,7 @@ export function JoinPage() {
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length) return
     setFormError('')
+    setErrors({})
     setStep((currentStep) => Math.min(currentStep + 1, registerSteps.length - 1))
   }
 
@@ -74,7 +97,7 @@ export function JoinPage() {
     setSubmitting(true)
     setFormError('')
     try {
-      await register(form)
+      const outcome = await register(form)
       savePendingOnboarding(
         form.email,
         buildOnboardingPayload(flattenQuestions(steps), form.answers, {
@@ -83,6 +106,8 @@ export function JoinPage() {
           emailInvitations: form.emailInvitations,
         }),
       )
+      setEmailSent(outcome.emailSent)
+      setEmailError(outcome.emailError ?? '')
       setSuccess(true)
     } catch (error) {
       const requestError = error instanceof ApiRequestError ? error : null
@@ -105,6 +130,12 @@ export function JoinPage() {
       goNext()
       return
     }
+    if (!formValid) {
+      const nextErrors = validateRegisterForm(form, steps)
+      setErrors(nextErrors)
+      setStep(firstInvalidStep(form, steps))
+      return
+    }
     void submitForm()
   }
 
@@ -125,7 +156,7 @@ export function JoinPage() {
   if (user && !success) return <Navigate to="/dashboard" replace />
   if (success) {
     return (
-      <RegistrationSuccess email={form.email} />
+      <RegistrationSuccess email={form.email} emailSent={emailSent} emailError={emailError} />
     )
   }
 
@@ -144,9 +175,12 @@ export function JoinPage() {
           ) : null}
           {!questionsState.loading && !questionsState.error && steps.length ? (
             <form className="overflow-hidden rounded-3xl border border-line bg-white p-5 shadow-card sm:p-8" onSubmit={onSubmit} noValidate>
-              <h2 className="font-display text-3xl text-ink sm:text-4xl">Create Your Consumer Profile</h2>
+              <h2 ref={stepSectionRef} className="font-display scroll-mt-24 text-3xl text-ink sm:text-4xl">
+                Create Your Consumer Profile
+              </h2>
               <p className="mt-2 text-sm leading-6 text-ink-soft">Tell us about yourself to receive relevant survey opportunities.</p>
-              <div className="mt-6">
+              <div>
+                <div className="mt-6">
                 <RegistrationProgress
                   step={step}
                   onSelect={(index) => {
@@ -180,29 +214,43 @@ export function JoinPage() {
                   {step === 5 ? (
                     <ReviewStep form={form} steps={steps} />
                   ) : step === 0 ? (
-                    <PersonalStep form={form} errors={errors} update={update} />
+                    <PersonalStep form={form} errors={shownErrors} update={update} />
                   ) : step === 4 ? (
-                    <PrivacyStep form={form} errors={errors} update={update} />
+                    <PrivacyStep form={form} errors={shownErrors} update={update} />
                   ) : (
                     <OnboardingFields
                       questions={questionsForApiStep(steps, JOIN_API_STEPS[step - 1])}
                       values={form.answers}
-                      errors={errors}
+                      errors={shownErrors}
                       onChange={updateAnswer}
                     />
                   )}
                 </motion.div>
               </AnimatePresence>
+              </div>
               <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Button type="button" variant="outline" disabled={step === 0 || submitting} onClick={() => setStep((currentStep) => currentStep - 1)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={step === 0 || submitting}
+                  onClick={() => {
+                    setErrors({})
+                    setStep((currentStep) => currentStep - 1)
+                  }}
+                >
                   Back
                 </Button>
                 {isLast ? (
-                  <Button type="submit" disabled={submitting} className="sm:min-w-64">
+                  <Button type="submit" disabled={submitting || !formValid} className="sm:min-w-64">
                     {submitting ? 'Creating your profile…' : 'Complete Registration'}
                   </Button>
                 ) : (
-                  <Button type="button" onClick={goNext}>
+                  <Button
+                    type="button"
+                    disabled={!stepValid}
+                    title={stepValid ? undefined : 'Complete all required fields to continue'}
+                    onClick={goNext}
+                  >
                     Continue
                   </Button>
                 )}

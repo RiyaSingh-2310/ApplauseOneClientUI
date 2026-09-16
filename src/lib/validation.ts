@@ -1,6 +1,7 @@
 import type { OnboardingQuestion, OnboardingStepGroup } from '@/types/api'
 import type { RegisterPayload } from '@/types/auth'
 import { questionsForApiStep } from '@/lib/apiMap'
+import { asNumber } from '@/lib/utils'
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const NAME_PATTERN = /^[\p{L}][\p{L}\s'.-]*$/u
@@ -39,7 +40,9 @@ export const emptyRegisterForm: RegisterPayload = {
 
 function questionAnswered(question: OnboardingQuestion, value: string | string[] | undefined) {
   if (question.field_type === 'checkbox') return Array.isArray(value) && value.length > 0
-  return typeof value === 'string' && value.length > 0
+  if (typeof value !== 'string') return false
+  const trimmed = value.trim()
+  return trimmed.length > 0
 }
 
 export function validateOnboardingQuestions(
@@ -48,7 +51,7 @@ export function validateOnboardingQuestions(
 ) {
   const errors: Record<string, string> = {}
   for (const question of questions) {
-    if (!question.is_required) continue
+    if (!asNumber(question.is_required)) continue
     if (!questionAnswered(question, answers[String(question.id)])) {
       errors[`q-${question.id}`] = 'This answer is required.'
     }
@@ -104,6 +107,18 @@ export function validateRegisterStep(
   }
 
   return errors
+}
+
+export function isRegisterStepValid(
+  form: RegisterPayload,
+  step: number,
+  steps: OnboardingStepGroup[] = [],
+) {
+  return Object.keys(validateRegisterStep(form, step, steps)).length === 0
+}
+
+export function isRegisterFormValid(form: RegisterPayload, steps: OnboardingStepGroup[] = []) {
+  return Object.keys(validateRegisterForm(form, steps)).length === 0
 }
 
 export function validateRegisterForm(form: RegisterPayload, steps: OnboardingStepGroup[] = []) {

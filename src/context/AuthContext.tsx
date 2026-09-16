@@ -95,13 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [completeSession])
 
   const register = useCallback(async (payload: RegisterPayload): Promise<RegisterOutcome> => {
-    await authService.register({
+    const result = await authService.register({
       name: `${payload.firstName.trim()} ${payload.lastName.trim()}`.trim(),
       email: payload.email.trim(),
       password: payload.password,
       phone: payload.phone.trim() || undefined,
     })
-    return { status: 'registered', needsVerification: true }
+    return { status: 'registered', needsVerification: true, emailSent: result.emailSent, emailError: result.emailError }
   }, [])
 
   const logout = useCallback(async () => {

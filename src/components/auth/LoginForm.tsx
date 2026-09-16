@@ -10,18 +10,16 @@ import { EMAIL_PATTERN } from '@/lib/validation'
 import { ApiRequestError } from '@/services/errors'
 import { authService } from '@/services/auth.service'
 
-function unverifiedMessage(error: ApiRequestError | null) {
-  if (!error) return ''
+function isUnverifiedLogin(error: ApiRequestError | null) {
+  if (!error) return false
   const message = error.message.toLowerCase()
   const mentionsVerify =
     message.includes('verify') ||
     message.includes('not active') ||
     message.includes('inactive') ||
-    message.includes('activation')
-  if (error.status === 403 || (error.status !== 401 && mentionsVerify) || (error.status === 401 && mentionsVerify)) {
-    return 'Please verify your email before logging in.'
-  }
-  return ''
+    message.includes('activation') ||
+    message.includes('not verified')
+  return error.status === 403 || mentionsVerify
 }
 
 export function LoginForm({
@@ -66,10 +64,9 @@ export function LoginForm({
     } catch (error) {
       const requestError = error instanceof ApiRequestError ? error : null
       if (requestError?.fieldErrors) setErrors((current) => ({ ...current, ...requestError.fieldErrors }))
-      const verifyCopy = unverifiedMessage(requestError)
-      if (verifyCopy) {
+      if (isUnverifiedLogin(requestError)) {
         setNeedsVerification(true)
-        setFormError(verifyCopy)
+        setFormError(requestError?.message || 'Please verify your email before logging in.')
       } else if (requestError?.status === 401) {
         setFormError('Those details did not match our records. Please try again.')
       } else {

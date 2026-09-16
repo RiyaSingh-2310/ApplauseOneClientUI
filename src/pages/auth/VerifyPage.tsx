@@ -10,15 +10,24 @@ import { EMAIL_PATTERN } from '@/lib/validation'
 import { ApiRequestError } from '@/services/errors'
 import { authService } from '@/services/auth.service'
 
-function isAlreadyVerified(error: unknown) {
-  if (!(error instanceof ApiRequestError)) return false
+type VerifyStatus = 'loading' | 'success' | 'already' | 'invalid' | 'expired' | 'missing' | 'error'
+
+function classifyVerifyError(error: unknown): Exclude<VerifyStatus, 'loading' | 'success' | 'missing'> {
+  if (!(error instanceof ApiRequestError)) return 'error'
   const message = error.message.toLowerCase()
-  return (
+  if (
     error.status === 409 ||
     message.includes('already verified') ||
     message.includes('already activated') ||
     message.includes('already active')
-  )
+  ) {
+    return 'already'
+  }
+  if (error.status === 410 || message.includes('expired')) return 'expired'
+  if (error.status === 404 || error.status === 400 || error.status === 422 || message.includes('invalid')) {
+    return 'invalid'
+  }
+  return 'error'
 }
 
 export function VerifyPage() {
@@ -28,22 +37,17 @@ export function VerifyPage() {
     () => readActivationToken(params, typeof window !== 'undefined' ? window.location.hash : '', pathToken),
     [params, pathToken],
   )
-  const [status, setStatus] = useState<'loading' | 'success' | 'already' | 'invalid' | 'expired' | 'missing' | 'error'>(
-    token ? 'loading' : 'missing',
-  )
+  const [status, setStatus] = useState<VerifyStatus>(token ? 'loading' : 'missing')
+  const [detail, setDetail] = useState('')
   const [retry, setRetry] = useState(0)
   const [email, setEmail] = useState('')
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [resendMessage, setResendMessage] = useState('')
 
   useEffect(() => {
-    if (!token) {
-      setStatus('missing')
-      return
-    }
+    if (!token) return
 
     let cancelled = false
-    setStatus('loading')
     authService
       .verify(token)
       .then(() => {
@@ -51,14 +55,8 @@ export function VerifyPage() {
       })
       .catch((error) => {
         if (cancelled) return
-        if (isAlreadyVerified(error)) {
-          setStatus('already')
-          return
-        }
-        const code = error instanceof ApiRequestError ? error.status : undefined
-        if (code === 410) setStatus('expired')
-        else if (code === 404 || code === 400 || code === 422) setStatus('invalid')
-        else setStatus('error')
+        setStatus(classifyVerifyError(error))
+        setDetail(error instanceof ApiRequestError ? error.message : '')
       })
 
     return () => {
@@ -99,12 +97,13 @@ export function VerifyPage() {
           : status === 'expired'
             ? {
                 title: 'Verification Link Expired',
-                body: 'This verification link has expired. Enter your email below to request a new activation link.',
+                body: detail || 'This verification link has expired. Enter your email below to request a new activation link.',
               }
             : status === 'error'
               ? {
                   title: 'We couldn’t verify your email',
-                  body: 'The connection failed or the server is unavailable. Please try again in a moment.',
+                  body:
+                    detail || 'The connection failed or the server is unavailable. Please try again in a moment.',
                 }
               : status === 'missing'
                 ? {
@@ -113,7 +112,7 @@ export function VerifyPage() {
                   }
                 : {
                     title: 'Verification Link Invalid',
-                    body: 'This verification link is invalid or no longer available.',
+                    body: detail || 'This verification link is invalid or no longer available.',
                   }
 
   const showLogin = status !== 'loading'
@@ -143,7 +142,16 @@ export function VerifyPage() {
         <h1 className="font-display mt-5 text-3xl text-ink">{copy.title}</h1>
         <p className="mt-3 text-sm leading-6 text-ink-soft">{copy.body}</p>
         {status === 'error' ? (
-          <Button className="mt-8" type="button" variant="outline" onClick={() => setRetry((value) => value + 1)}>
+          <Button
+            className="mt-8"
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setStatus('loading')
+              setDetail('')
+              setRetry((value) => value + 1)
+            }}
+          >
             Try again
           </Button>
         ) : null}

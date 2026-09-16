@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes } from 'react'
 import { Input } from '@/components/ui/input'
+import { isNumberStepperKey } from '@/lib/lockNumberInputs'
 import { sanitizeNumericInput } from '@/lib/numeric'
 import { cn } from '@/lib/utils'
 
@@ -19,7 +20,6 @@ export function NumericInput({
   decimalPlaces = 2,
   className,
   onKeyDown,
-  onWheel,
   ...props
 }: NumericInputProps) {
   return (
@@ -31,12 +31,8 @@ export function NumericInput({
       value={String(value)}
       className={cn('[appearance:textfield]', className)}
       onKeyDown={(event) => {
-        if (event.key === 'ArrowUp' || event.key === 'ArrowDown') event.preventDefault()
+        if (isNumberStepperKey(event.key)) event.preventDefault()
         onKeyDown?.(event)
-      }}
-      onWheel={(event) => {
-        event.currentTarget.blur()
-        onWheel?.(event)
       }}
       onChange={(event) => {
         onValueChange(

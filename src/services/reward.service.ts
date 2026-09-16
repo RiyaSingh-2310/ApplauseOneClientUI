@@ -2,7 +2,7 @@ import type { PublicSettings, RewardBalance, RewardRequestRecord, RewardTransact
 import type { PointsGuide, RedeemRewardPayload, RewardOption, RewardRequest } from '@/types/reward'
 import { hydrateInstantCash } from '@/lib/rewards'
 import { asNumber } from '@/lib/utils'
-import { unwrapCollection } from '@/lib/apiMap'
+import { mapRewardRequest, paymentMethodCategory, paymentMethodsToRewards, unwrapCollection } from '@/lib/apiMap'
 import { apiRequest } from './http'
 
 export interface RewardCatalogResponse {

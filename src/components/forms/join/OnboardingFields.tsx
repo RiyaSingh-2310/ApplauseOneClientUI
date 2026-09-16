@@ -1,6 +1,7 @@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field } from '@/components/ui/field'
 import { Select } from '@/components/ui/select'
+import { asNumber } from '@/lib/utils'
 import type { OnboardingQuestion } from '@/types/api'
 
 export function OnboardingFields({
@@ -31,7 +32,7 @@ export function OnboardingFields({
               key={question.id}
               label={question.question_text}
               htmlFor={`q-${question.id}`}
-              required={Boolean(question.is_required)}
+              required={Boolean(asNumber(question.is_required))}
               error={error}
             >
               <Select
@@ -39,6 +40,7 @@ export function OnboardingFields({
                 value={typeof value === 'string' ? value : ''}
                 placeholder="Select an option"
                 options={options}
+                aria-invalid={Boolean(error)}
                 onChange={(event) => onChange(question.id, event.target.value)}
               />
             </Field>
@@ -51,7 +53,7 @@ export function OnboardingFields({
             <Field
               key={question.id}
               label={question.question_text}
-              required={Boolean(question.is_required)}
+              required={Boolean(asNumber(question.is_required))}
               error={error}
             >
               <div className="grid gap-2 sm:grid-cols-2">
@@ -80,7 +82,7 @@ export function OnboardingFields({
           <Field
             key={question.id}
             label={question.question_text}
-            required={Boolean(question.is_required)}
+            required={Boolean(asNumber(question.is_required))}
             error={error}
           >
             <div className="grid gap-2 sm:grid-cols-2">

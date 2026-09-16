@@ -3,7 +3,7 @@ import type { AuthSuccessData, Panelist } from '@/types/api'
 import { ApiRequestError } from './errors'
 import { apiRequest } from './http'
 
-const verifyInFlight = new Map<string, Promise<AuthSuccessData | undefined>>()
+const verifyInFlight = new Map<string, Promise<undefined>>()
 
 function requireUser(data: Panelist | { user: Panelist } | undefined): Panelist {
   if (data && typeof data === 'object' && 'user' in data && data.user?.email) return data.user
@@ -26,6 +26,10 @@ function requireSession(data: AuthSuccessData | undefined, fallback: string): Au
   return { token: data.token, user: data.user }
 }
 
+function activationEmailSent(data: AuthSuccessData | undefined) {
+  return data?.email_sent === true
+}
+
 export const authService = {
   login(payload: Pick<LoginPayload, 'email' | 'password'>) {
     return apiRequest<AuthSuccessData>('/auth/login', {
@@ -45,7 +49,10 @@ export const authService = {
       method: 'POST',
       body,
       auth: false,
-    }).then(() => undefined)
+    }).then((data) => ({
+      emailSent: activationEmailSent(data),
+      emailError: data?.email_error,
+    }))
   },
   verify(token: string) {
     const existing = verifyInFlight.get(token)
@@ -54,18 +61,28 @@ export const authService = {
       method: 'POST',
       body: { token },
       auth: false,
-    }).catch((error) => {
-      verifyInFlight.delete(token)
-      throw error
     })
+      .then(() => undefined)
+      .catch((error) => {
+        verifyInFlight.delete(token)
+        throw error
+      })
     verifyInFlight.set(token, request)
     return request
   },
   resendActivation(email: string) {
-    return apiRequest<unknown>('/auth/resend-activation', {
+    return apiRequest<AuthSuccessData | undefined>('/auth/resend-activation', {
       method: 'POST',
       body: { email },
       auth: false,
+    }).then((data) => {
+      if (data && data.email_sent === false) {
+        throw new ApiRequestError(
+          { message: data.email_error || 'Could not send activation email. Please try again later.' },
+          502,
+        )
+      }
+      return { emailSent: data?.email_sent !== false }
     })
   },
   forgotPassword(payload: ForgotPasswordPayload) {
