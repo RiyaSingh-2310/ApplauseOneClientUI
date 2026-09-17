@@ -13,13 +13,13 @@ export function Logo({ to = '/', inverted = false, compact = false, className }:
   return (
     <Link
       to={to}
-      className={cn('inline-flex max-w-[min(100%,280px)] items-center', inverted && 'rounded-lg bg-white px-2 py-1.5', className)}
+      className={cn('inline-flex max-w-[min(100%,320px)] items-center', inverted && 'rounded-lg bg-white px-2 py-1.5', className)}
       aria-label="Applause One home"
     >
       <img
         src={brandLogo}
         alt="Applause One"
-        className={cn('h-11 w-auto object-contain object-left sm:h-12', compact && 'h-9 sm:h-10')}
+        className={cn('h-15 w-auto object-contain object-left sm:h-16', compact && 'h-8 sm:h-10')}
       />
     </Link>
   )
