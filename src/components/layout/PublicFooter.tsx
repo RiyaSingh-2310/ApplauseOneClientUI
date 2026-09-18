@@ -39,7 +39,7 @@ export function PublicFooter() {
     <footer className="border-t border-white/10 bg-ink text-cream">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.3fr_repeat(3,1fr)] lg:px-8">
         <div>
-          <Logo inverted to="/" />
+          <Logo variant="footer" to="/" />
           <p className="mt-5 max-w-sm text-sm leading-7 text-cream/70">
             Share your opinions and earn rewards with a trusted consumer research platform built for privacy, fairness, and real payouts.
           </p>
