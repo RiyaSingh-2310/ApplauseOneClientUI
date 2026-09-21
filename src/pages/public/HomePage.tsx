@@ -14,6 +14,7 @@ import { SectionHeading } from '@/components/shared/SectionHeading'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { RewardMethodsShowcase } from '@/components/rewards/RewardMethodsShowcase'
 import { useAuth } from '@/hooks/useAuth'
 
 const benefits = [
@@ -29,13 +30,6 @@ const steps = [
   { n: '02', title: 'Complete Your Profile', copy: 'Tell us about your household so we can assign relevant studies.' },
   { n: '03', title: 'Receive Assigned Surveys', copy: 'Open your portal to see every project assigned to you — not just email links.' },
   { n: '04', title: 'Complete Surveys & Earn Rewards', copy: 'Finish a study, collect points, and redeem when you are ready.' },
-]
-
-const previewRewards = [
-  { name: 'Cash', detail: 'PayPal payouts with their own points requirement.' },
-  { name: 'Gift Cards', detail: 'Amazon, Walmart, Starbucks, and more as they are enabled.' },
-  { name: 'PayPal', detail: 'A fast cash option once your request is approved.' },
-  { name: 'Other options', detail: 'Digital codes and charity donations, configured by the backend.' },
 ]
 
 export function HomePage() {
@@ -199,29 +193,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Rewards preview"
-          title="Redeem on your terms"
-          description="Reward values come from configuration — not a single hard-coded conversion rate. Browse cash, cards, digital credit, and charity."
-        />
-        <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {previewRewards.map((reward) => (
-            <Card key={reward.name} className="overflow-hidden">
-              <div className="h-1.5 bg-linear-to-r from-teal to-gold" />
-              <CardContent>
-                <h3 className="font-display text-2xl">{reward.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">{reward.detail}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="mt-8 text-center">
-          <Button asChild variant="outline">
-            <Link to="/rewards">Browse the catalog</Link>
-          </Button>
-        </div>
-      </section>
+      <RewardMethodsShowcase />
 
       <section className="border-y border-line bg-white">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8">
