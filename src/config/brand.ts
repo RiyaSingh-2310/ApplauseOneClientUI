@@ -61,10 +61,10 @@ export const publicNav = [
 
 export const memberNav = [
   { to: '/dashboard', label: 'Dashboard', end: true },
-  { to: '/surveys', label: 'Surveys' },
   { to: '/', label: 'Home', end: true },
   { to: '/rewards', label: 'Rewards' },
-  { to: '/history', label: 'History' },
+  { to: '/redeem-rewards', label: 'Redeem Rewards' },
+  { to: '/history', label: 'Reward History' },
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
 ] as const

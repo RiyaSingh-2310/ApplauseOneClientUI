@@ -34,6 +34,10 @@ export interface RewardRequest {
   pointsUsed: number
   requestedAt: string
   status: RewardRequestStatus
+  paymentMethod?: string
+  remark?: string | null
+  comment?: string | null
+  processedAt?: string | null
 }
 
 export interface RewardTransaction {

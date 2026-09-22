@@ -88,7 +88,10 @@ export function LoginForm({
       ) : null}
       {needsVerification ? (
         <div className="rounded-xl bg-teal-soft/60 px-4 py-3 text-sm text-teal-deep">
-          <p>Please verify your email before logging in. If you did not receive the message, resend it below.</p>
+          <p>
+            Your account is not active yet. Check your inbox for the activation email, or resend it below. Login stays
+            blocked until the backend verifies your email.
+          </p>
           <button
             type="button"
             className="mt-2 font-medium underline"
@@ -106,14 +109,18 @@ export function LoginForm({
               } catch (error) {
                 setResendState('error')
                 setResendMessage(
-                  error instanceof ApiRequestError ? error.message : 'We could not resend the email. Please try again.',
+                  error instanceof ApiRequestError
+                    ? error.message
+                    : 'We could not resend the email. Please try again.',
                 )
               }
             }}
           >
             {resendState === 'sending' ? 'Sending…' : 'Resend verification email'}
           </button>
-          {resendMessage ? <p className="mt-2">{resendMessage}</p> : null}
+          {resendMessage ? (
+            <p className={`mt-2 ${resendState === 'error' ? 'text-danger' : ''}`}>{resendMessage}</p>
+          ) : null}
         </div>
       ) : null}
       <Field label="Email Address" htmlFor={`${idPrefix}-email`} required error={errors.email}>

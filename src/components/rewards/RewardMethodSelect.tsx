@@ -16,20 +16,23 @@ function MethodRow({ method }: { method: RewardMethod }) {
 export function RewardMethodSelect({
   value,
   onValueChange,
+  methods = rewardMethods,
   id,
   disabled,
   className,
 }: {
   value: string
   onValueChange: (value: string) => void
+  methods?: RewardMethod[]
   id?: string
   disabled?: boolean
   className?: string
 }) {
-  const selected = rewardMethods.find((method) => method.id === value) ?? rewardMethods[0]
+  const options = methods.length ? methods : rewardMethods
+  const selected = options.find((method) => method.id === value) ?? options[0]
 
   return (
-    <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
+    <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled || !options.length}>
       <SelectPrimitive.Trigger
         id={id}
         className={cn(
@@ -42,7 +45,7 @@ export function RewardMethodSelect({
         aria-label="Reward method"
       >
         <SelectPrimitive.Value>
-          {selected ? <MethodRow method={selected} /> : null}
+          {selected ? <MethodRow method={selected} /> : <span className="text-sm text-muted">Select a reward method</span>}
         </SelectPrimitive.Value>
         <SelectPrimitive.Icon className="shrink-0 text-muted">
           <ChevronDown className="size-4" />
@@ -60,7 +63,7 @@ export function RewardMethodSelect({
           )}
         >
           <SelectPrimitive.Viewport className="p-1.5">
-            {rewardMethods.map((method) => (
+            {options.map((method) => (
               <SelectPrimitive.Item
                 key={method.id}
                 value={method.id}

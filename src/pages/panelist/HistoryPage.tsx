@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { RewardRequestHistoryList } from '@/components/rewards/RewardRequestHistoryList'
 import { EmptyState, ErrorState, LoadingSkeleton } from '@/components/shared/PageState'
 import { RequestStatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
@@ -31,10 +32,15 @@ export function HistoryPage() {
       <section className="hero-grid px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="mx-auto max-w-6xl">
           <p className="text-xs font-semibold tracking-[0.18em] text-teal uppercase">Your activity</p>
-          <h1 className="font-display mt-3 text-4xl text-ink sm:text-5xl">History</h1>
+          <h1 className="font-display mt-3 text-4xl text-ink sm:text-5xl">Reward History</h1>
           <p className="mt-4 max-w-2xl text-base leading-8 text-ink-soft">
-            Review reward requests and points you have earned. Status values come from your account activity.
+            Review redemption requests and points you have earned. Status values come from your account activity.
           </p>
+          <div className="mt-6">
+            <Button asChild variant="outline">
+              <Link to={paths.redeemRewards}>Redeem Rewards</Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -65,33 +71,11 @@ export function HistoryPage() {
           {error ? <ErrorState message="Unable to load your history." onRetry={reload} /> : null}
 
           {!loading && !error && tab === 'rewards' ? (
-            rewardItems.length === 0 ? (
-              <EmptyState
-                title="No reward requests yet."
-                description="When you redeem a catalog item, the request and its status will appear here."
-                action={
-                  <Button asChild>
-                    <Link to={paths.rewards}>Choose a Reward</Link>
-                  </Button>
-                }
-              />
-            ) : (
-              <div className="grid gap-3">
-                {rewardItems.map((item) => (
-                  <Card key={item.id}>
-                    <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <h2 className="font-display text-2xl text-ink">{item.rewardName}</h2>
-                        <p className="mt-1 text-sm text-ink-soft">
-                          {formatNumber(item.pointsUsed)} points · {formatDate(item.requestedAt)}
-                        </p>
-                      </div>
-                      <RequestStatusBadge status={item.status} />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )
+            <RewardRequestHistoryList
+              items={rewardItems}
+              emptyActionTo={paths.redeemRewards}
+              emptyActionLabel="Redeem Rewards"
+            />
           ) : null}
 
           {!loading && !error && tab === 'earnings' ? (

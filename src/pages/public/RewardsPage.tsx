@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { RewardBenefits } from '@/components/rewards/RewardBenefits'
 import { RedeemDialog } from '@/components/rewards/RedeemDialog'
 import { RewardCategorySection } from '@/components/rewards/RewardCategorySection'
@@ -71,7 +72,11 @@ export function RewardsPage() {
               <p className="font-display mt-1 text-3xl text-ink">{formatNumber(points)}</p>
             </div>
             <p className="max-w-md text-sm leading-6 text-ink-soft">
-              Choose a reward to request a payout. After you submit, you can follow the status in History.
+              Browse options here, then open{' '}
+              <Link to={paths.redeemRewards} className="font-medium text-teal hover:underline">
+                Redeem Rewards
+              </Link>{' '}
+              to submit a payout. Track status in Reward History.
             </p>
           </div>
           {message ? <p className="mt-4 rounded-xl bg-success-soft px-4 py-3 text-sm text-success">{message}</p> : null}

@@ -131,7 +131,7 @@ export function DashboardPage() {
                   </p>
                 </div>
                 <Button asChild className="w-full sm:w-auto" variant="gold">
-                  <Link to={paths.rewards}>
+                  <Link to={paths.redeemRewards}>
                     Choose a Reward
                     <ArrowRight />
                   </Link>
@@ -237,7 +237,7 @@ export function DashboardPage() {
                 Choose a payout option, submit a request, then follow its status in History.
               </p>
               <Button asChild className="mt-5 w-full sm:w-auto">
-                <Link to={paths.rewards}>View Rewards</Link>
+                <Link to={paths.redeemRewards}>Redeem Rewards</Link>
               </Button>
             </div>
             <h2 className="font-display mt-8 text-2xl text-ink">Quick actions</h2>

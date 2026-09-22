@@ -156,6 +156,10 @@ export function mapRewardRequest(record: RewardRequestRecord): RewardRequest {
     pointsUsed: asNumber(record.reward_points),
     requestedAt: record.created_at,
     status,
+    paymentMethod: record.payment_method || record.payment_methord || name,
+    remark: record.remark,
+    comment: record.comment,
+    processedAt: record.action_date,
   }
 }
 
