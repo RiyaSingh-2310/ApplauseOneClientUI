@@ -1,4 +1,4 @@
-import { BookOpen, CircleHelp, MessageCircle } from 'lucide-react'
+import { BookOpen, CircleHelp, MessageCircle, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -91,21 +91,36 @@ export function HelpPage() {
         description={helpHero.description}
       >
         <form
-          className="mx-auto mt-8 flex w-full max-w-xl overflow-hidden rounded-full border border-line bg-white shadow-soft"
+          className="mx-auto mt-8 flex w-full max-w-xl items-center overflow-hidden rounded-full border border-line bg-white shadow-soft focus-within:border-teal focus-within:ring-4 focus-within:ring-teal/10"
           onSubmit={(event) => {
             event.preventDefault()
             setQuery(draft)
             if (tab !== 'browse' && tab !== 'faq') setTab('browse')
           }}
         >
-          <Input
-            aria-label="Search help"
-            className="h-12 rounded-none border-0 shadow-none focus-visible:ring-0"
-            placeholder={helpHero.searchPlaceholder}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-          />
-          <Button type="submit" className="m-1 rounded-full">
+          <div className="relative min-w-0 flex-1">
+            <Input
+              aria-label="Search help"
+              className="h-12 rounded-none border-0 pr-10 shadow-none focus-visible:ring-0"
+              placeholder={helpHero.searchPlaceholder}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+            />
+            <button
+              type="button"
+              aria-label="Clear search"
+              className="absolute top-1/2 right-1.5 grid size-8 -translate-y-1/2 place-items-center rounded-full text-muted transition-colors hover:bg-cream hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+              hidden={!draft}
+              tabIndex={draft ? 0 : -1}
+              onClick={() => {
+                setDraft('')
+                setQuery('')
+              }}
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          <Button type="submit" className="m-1 shrink-0 rounded-full">
             Search
           </Button>
         </form>

@@ -1,6 +1,6 @@
 import type { PublicSettings, RewardBalance, RewardRequestRecord, RewardTransactionRecord } from '@/types/api'
 import type { PointsGuide, RedeemRewardPayload, RewardOption, RewardRequest } from '@/types/reward'
-import { hydrateInstantCash } from '@/lib/rewards'
+import { appendFeaturedGiftCard, hydrateInstantCash } from '@/lib/rewards'
 import { asNumber } from '@/lib/utils'
 import { mapRewardRequest, paymentMethodCategory, paymentMethodsToRewards, unwrapCollection } from '@/lib/apiMap'
 import { apiRequest } from './http'
@@ -23,14 +23,14 @@ function guideFromMinimum(minimum: number): PointsGuide {
 function catalogFromMethods(
   methods: PublicSettings['payment_methods'],
   minimum: number,
-  settings?: Pick<PublicSettings, 'paypal_enabled'>,
+  settings?: Pick<PublicSettings, 'paypal_enabled' | 'amazon_enabled'>,
 ): RewardOption[] {
   const list = methods ?? []
   const rest = paymentMethodsToRewards(
     list.filter((method) => paymentMethodCategory(method.name) !== 'cash'),
     minimum,
   )
-  return [...hydrateInstantCash(minimum, list, settings), ...rest]
+  return appendFeaturedGiftCard([...hydrateInstantCash(minimum, list, settings), ...rest], list, settings)
 }
 
 export const rewardService = {
@@ -46,10 +46,13 @@ export const rewardService = {
     return apiRequest<RewardBalance>('/rewards/balance')
   },
   async getMemberCatalog(): Promise<RewardCatalogResponse> {
-    const balance = await apiRequest<RewardBalance>('/rewards/balance')
+    const [balance, settings] = await Promise.all([
+      apiRequest<RewardBalance>('/rewards/balance'),
+      apiRequest<PublicSettings>('/settings', { auth: false }),
+    ])
     const minimum = asNumber(balance.minimum_payout)
     return {
-      items: catalogFromMethods(balance.payment_methods, minimum),
+      items: catalogFromMethods(balance.payment_methods, minimum, settings),
       guide: guideFromMinimum(minimum),
       balancePoint: asNumber(balance.balance_point),
     }

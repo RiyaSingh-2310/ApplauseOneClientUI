@@ -1,6 +1,8 @@
+/** Fields collected in the UI. The service maps these onto the Contact API body. */
 export interface ContactPayload {
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  topic: string
+  subject: string
   message: string
 }

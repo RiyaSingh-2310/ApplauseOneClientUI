@@ -38,7 +38,7 @@ export const contactMethods = [
     id: 'office',
     title: 'Office Location',
     copy: 'Visit our headquarters',
-    detail: 'Level 35-02 (East Wing), Q Sentral, 2A, Jalan Stesen Sentral 2, KL Sentral Kuala Lumpur 50470, MALAYSIA',
+    detail: 'Level 35-02 (East Wing), Q Sentral\n2A, Jalan Stesen Sentral 2\nKL Sentral, Kuala Lumpur 50470\nMalaysia',
     cta: 'Get Directions',
     href: 'https://www.google.com/maps/search/?api=1&query=Level%2035-02%20East%20Wing%20Q%20Sentral%202A%20Jalan%20Stesen%20Sentral%202%20KL%20Sentral%20Kuala%20Lumpur%2050470%20Malaysia',
     icon: 'map',

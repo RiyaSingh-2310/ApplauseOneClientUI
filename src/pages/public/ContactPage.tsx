@@ -34,10 +34,11 @@ export function ContactPage() {
             description="Multiple ways to get the help you need, when you need it."
           />
         </AnimatedSection>
-        <div className="mx-auto mt-12 grid max-w-6xl gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mx-auto mt-12 grid max-w-6xl items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {contactMethods.map((method, index) => (
             <motion.div
               key={method.id}
+              className="h-full min-w-0"
               initial={reduce ? false : { opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}

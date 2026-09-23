@@ -6,6 +6,8 @@ export const paths = {
   help: '/help',
   about: '/about',
   contact: '/contact',
+  privacyPolicy: '/privacy-policy',
+  termsConditions: '/terms-conditions',
   join: '/join',
   login: '/login',
   verifyEmail: '/verify-email',

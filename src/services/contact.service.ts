@@ -1,14 +1,22 @@
 import type { ContactPayload } from '@/types/contact'
-import { ApiRequestError } from './errors'
+import { apiRequest } from './http'
 
+/**
+ * POST /contact — documented as POST /admin/contact as well.
+ * Required body: first_name, last_name, email, subject, message.
+ */
 export const contactService = {
   submit(payload: ContactPayload) {
-    void payload
-    return Promise.reject(
-      new ApiRequestError({
-        message:
-          'Online messaging is not available yet. Please email admin@arserviceco.com or call +60 3 2731 9315.',
-      }),
-    )
+    return apiRequest<unknown>('/contact', {
+      method: 'POST',
+      auth: false,
+      body: {
+        first_name: payload.firstName.trim(),
+        last_name: payload.lastName.trim(),
+        email: payload.email.trim(),
+        subject: payload.subject.trim(),
+        message: payload.message.trim(),
+      },
+    })
   },
 }

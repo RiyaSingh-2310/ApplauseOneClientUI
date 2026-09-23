@@ -30,7 +30,7 @@ export function ContactMethodCard({
 }) {
   const Icon = icons[icon]
   const className = cn(
-    'group flex h-full w-full flex-col rounded-[1.6rem] border border-line bg-white p-6 text-center shadow-card',
+    'group flex h-full min-w-0 w-full flex-col rounded-[1.6rem] border border-line bg-white p-6 text-center shadow-card',
     cardLiftClass,
     accent && 'border-teal/20 bg-teal-soft/30',
   )
@@ -38,7 +38,7 @@ export function ContactMethodCard({
   const action = (
     <span
       className={cn(
-        'mt-5 inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-medium',
+        'mt-auto flex h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium',
         accent ? 'border border-teal bg-teal text-white' : 'border border-line bg-white text-ink',
       )}
     >
@@ -48,12 +48,14 @@ export function ContactMethodCard({
 
   const body = (
     <>
-      <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-teal-soft text-teal transition-transform duration-200 motion-safe:group-hover:-translate-y-0.5">
+      <span className="mx-auto grid size-14 shrink-0 place-items-center rounded-2xl bg-teal-soft text-teal transition-transform duration-200 motion-safe:group-hover:-translate-y-0.5">
         <Icon className="size-6" />
       </span>
       <h3 className="mt-5 font-display text-xl text-ink">{title}</h3>
-      <p className="mt-2 text-sm text-ink-soft">{copy}</p>
-      <p className={cn('mt-4 text-sm font-medium break-words', icon === 'chat' ? 'text-success' : 'text-ink')}>{detail}</p>
+      <p className="mt-2 min-h-10 text-sm leading-5 text-ink-soft">{copy}</p>
+      <p className={cn('mt-4 min-h-12 flex-1 text-sm leading-6 font-medium break-words whitespace-pre-line', icon === 'chat' ? 'text-success' : 'text-ink')}>
+        {detail}
+      </p>
       {action}
     </>
   )

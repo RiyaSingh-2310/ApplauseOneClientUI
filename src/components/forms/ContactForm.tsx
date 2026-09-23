@@ -1,5 +1,5 @@
 import { Send } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -24,21 +24,55 @@ export function ContactForm({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [sentTo, setSentTo] = useState('')
   const [formError, setFormError] = useState('')
+  const inFlight = useRef(false)
+
+  function splitName(full: string) {
+    const parts = full.trim().split(/\s+/).filter(Boolean)
+    return {
+      firstName: parts[0] ?? '',
+      lastName: parts.slice(1).join(' '),
+    }
+  }
+
+  function applyApiErrors(fieldErrors: Record<string, string> | undefined) {
+    if (!fieldErrors) return
+    const next: Record<string, string> = {}
+    for (const [key, value] of Object.entries(fieldErrors)) {
+      const target =
+        key === 'first_name'
+          ? layout === 'full'
+            ? 'firstName'
+            : 'name'
+          : key === 'last_name'
+            ? layout === 'full'
+              ? 'lastName'
+              : 'name'
+            : key === 'message'
+              ? 'message'
+              : key
+      if (!next[target]) next[target] = value
+    }
+    if (Object.keys(next).length) setErrors((current) => ({ ...current, ...next }))
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
+    if (inFlight.current) return
     const next: Record<string, string> = {}
-    const fullName = layout === 'full' ? `${firstName} ${lastName}`.trim() : name.trim()
+    const names = layout === 'full' ? { firstName: firstName.trim(), lastName: lastName.trim() } : splitName(name)
     if (layout === 'full') {
-      if (!firstName.trim()) next.firstName = 'Please enter your first name.'
-      else if (firstName.trim().length > NAME_MAX_LENGTH) next.firstName = 'First name must be 30 characters or fewer.'
-      else if (!NAME_PATTERN.test(firstName.trim())) next.firstName = 'Enter a valid first name.'
-      if (!lastName.trim()) next.lastName = 'Please enter your last name.'
-      else if (lastName.trim().length > NAME_MAX_LENGTH) next.lastName = 'Last name must be 30 characters or fewer.'
-      else if (!NAME_PATTERN.test(lastName.trim())) next.lastName = 'Enter a valid last name.'
+      if (!names.firstName) next.firstName = 'Please enter your first name.'
+      else if (names.firstName.length > NAME_MAX_LENGTH) next.firstName = 'First name must be 30 characters or fewer.'
+      else if (!NAME_PATTERN.test(names.firstName)) next.firstName = 'Enter a valid first name.'
+      if (!names.lastName) next.lastName = 'Please enter your last name.'
+      else if (names.lastName.length > NAME_MAX_LENGTH) next.lastName = 'Last name must be 30 characters or fewer.'
+      else if (!NAME_PATTERN.test(names.lastName)) next.lastName = 'Enter a valid last name.'
     } else if (!name.trim()) {
       next.name = 'Please enter your name.'
+    } else if (!names.lastName) {
+      next.name = 'Please enter your first and last name.'
     }
     if (!email.trim() || !EMAIL_PATTERN.test(email)) next.email = 'Enter a valid email address.'
     if (!subject.trim()) next.subject = 'Please add a subject.'
@@ -46,19 +80,33 @@ export function ContactForm({
     setErrors(next)
     if (Object.keys(next).length) return
 
+    inFlight.current = true
     setSubmitting(true)
     setFormError('')
+    const replyTo = email.trim()
     try {
       await contactService.submit({
-        name: fullName,
-        email,
-        topic: subject.trim(),
+        firstName: names.firstName,
+        lastName: names.lastName,
+        email: replyTo,
+        subject: subject.trim(),
         message: message.trim(),
       })
+      setFirstName('')
+      setLastName('')
+      setName('')
+      setEmail('')
+      setSubject('')
+      setMessage('')
+      setErrors({})
+      setSentTo(replyTo)
       setSuccess(true)
     } catch (error) {
-      setFormError(error instanceof ApiRequestError ? error.message : 'Unable to send your message. Please try again.')
+      const requestError = error instanceof ApiRequestError ? error : null
+      applyApiErrors(requestError?.fieldErrors)
+      setFormError(requestError?.message || 'Unable to send your message. Please try again.')
     } finally {
+      inFlight.current = false
       setSubmitting(false)
     }
   }
@@ -68,7 +116,7 @@ export function ContactForm({
       <div className="rounded-2xl bg-success-soft px-5 py-8 text-center" role="status">
         <h3 className="font-display text-2xl text-ink">Message received</h3>
         <p className="mt-2 text-sm leading-6 text-ink-soft">
-          Thank you. We will reply to {email} as soon as we can, typically within 24 hours.
+          Thank you. We will reply to {sentTo} as soon as we can, typically within 24 hours.
         </p>
       </div>
     )

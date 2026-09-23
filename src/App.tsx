@@ -18,7 +18,9 @@ import { ContactPage } from '@/pages/public/ContactPage'
 import { HelpPage } from '@/pages/public/HelpPage'
 import { HomePage } from '@/pages/public/HomePage'
 import { HowItWorksPage } from '@/pages/public/HowItWorksPage'
+import { PrivacyPolicyPage } from '@/pages/public/PrivacyPolicyPage'
 import { RewardsPage } from '@/pages/public/RewardsPage'
+import { TermsConditionsPage } from '@/pages/public/TermsConditionsPage'
 
 function VerifySearchRedirect() {
   const { search, hash } = useLocation()
@@ -49,6 +51,8 @@ export default function App() {
             <Route path={paths.help} element={<HelpPage />} />
             <Route path={paths.about} element={<AboutPage />} />
             <Route path={paths.contact} element={<ContactPage />} />
+            <Route path={paths.privacyPolicy} element={<PrivacyPolicyPage />} />
+            <Route path={paths.termsConditions} element={<TermsConditionsPage />} />
             <Route path={paths.join} element={<JoinPage />} />
             <Route path={paths.verifyEmail} element={<VerifyPage />} />
             <Route path={`${paths.verifyEmail}/:token`} element={<VerifyPage />} />

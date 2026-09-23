@@ -165,9 +165,42 @@ select:autofill {
   animation-play-state: paused;
 }
 
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+.float-soft {
+  animation: float-soft 7.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.float-soft-late {
+  animation: float-soft 9s ease-in-out infinite;
+  animation-delay: -2.4s;
+  will-change: transform;
+}
+
+.float-soft-slow {
+  animation: float-soft 11s ease-in-out infinite;
+  animation-delay: -4s;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .float-soft,
+  .float-soft-late,
+  .float-soft-slow {
+    animation: none;
   }
 
   .partners-marquee {
