@@ -160,10 +160,14 @@ export function DashboardPage() {
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="font-display text-2xl text-ink sm:text-3xl">Recent projects</h2>
-              <p className="mt-1 text-sm text-ink-soft">Surveys assigned to your account appear here.</p>
+              <p className="mt-1 text-sm text-ink-soft">
+                {projects.length > 3
+                  ? `Your latest assigned surveys. ${projects.length} are on your Surveys page.`
+                  : 'Your latest assigned surveys. Open Surveys to see every study on your account.'}
+              </p>
             </div>
             <Link to={paths.surveys} className="text-sm font-medium text-teal hover:underline">
-              See all
+              See all surveys
             </Link>
           </div>
           {projectsQuery.loading ? <LoadingSkeleton rows={2} /> : null}
@@ -185,7 +189,7 @@ export function DashboardPage() {
           ) : null}
         </AnimatedSection>
 
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid items-start gap-8 lg:grid-cols-2">
           <AnimatedSection delay={0.06}>
             <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -230,9 +234,12 @@ export function DashboardPage() {
           </AnimatedSection>
 
           <AnimatedSection delay={0.08}>
-            <div className="rounded-[1.6rem] border border-teal/15 bg-teal-soft/40 p-5 sm:p-6">
-              <p className="text-xs tracking-[0.16em] text-teal-deep uppercase">Redeem your points</p>
-              <h2 className="font-display mt-2 text-2xl text-ink">Use your balance for a reward.</h2>
+            <div className="mb-1">
+              <h2 className="font-display text-2xl text-ink sm:text-3xl">Redeem your points</h2>
+              <p className="mt-1 text-sm text-ink-soft">Use your balance for a reward.</p>
+            </div>
+            <div className="mt-5 rounded-[1.6rem] border border-teal/15 bg-teal-soft/40 p-5 sm:p-6">
+              <p className="text-xs tracking-[0.16em] text-teal-deep uppercase">Ready when you are</p>
               <p className="mt-2 text-sm leading-6 text-ink-soft">
                 Choose a payout option, submit a request, then follow its status in History.
               </p>
@@ -240,11 +247,16 @@ export function DashboardPage() {
                 <Link to={paths.redeemRewards}>Redeem Rewards</Link>
               </Button>
             </div>
-            <h2 className="font-display mt-8 text-2xl text-ink">Quick actions</h2>
-            <p className="mt-1 mb-5 text-sm text-ink-soft">Move through your member area without extra menus.</p>
-            <QuickActions />
           </AnimatedSection>
         </div>
+
+        <AnimatedSection delay={0.1}>
+          <div className="border-t border-line pt-8">
+            <h2 className="font-display text-2xl text-ink sm:text-3xl">Quick actions</h2>
+            <p className="mt-1 mb-5 text-sm text-ink-soft">Move through your member area without extra menus.</p>
+            <QuickActions />
+          </div>
+        </AnimatedSection>
       </div>
     </div>
   )

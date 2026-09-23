@@ -33,12 +33,26 @@ export function RedeemRewardsPage() {
 
   const available = asNumber(balance.data?.balance_point)
   const minimum = asNumber(balance.data?.minimum_payout)
+  const requests = history.data?.items ?? []
+  const historyReady = Boolean(history.data) && !history.loading
+  const pendingRequests = requests.filter((item) => item.status === 'pending')
+  const completedRequests = requests.filter((item) => item.status === 'completed' || item.status === 'approved')
+  const pendingPoints = pendingRequests.reduce((sum, item) => sum + asNumber(item.pointsUsed), 0)
   const resolvedMethodId =
     methodId && methods.some((method) => method.id === methodId) ? methodId : methods[0]?.id ?? ''
   const selected = getRewardMethodById(resolvedMethodId) ?? methods[0]
-  const pointsValue = points === '' ? minimum : asNumber(points)
+  const pointsValue = points === '' ? 0 : asNumber(points)
+  const pointsError =
+    points === ''
+      ? ''
+      : pointsValue > available
+        ? `Enter no more than ${formatNumber(available)} points.`
+        : pointsValue < minimum
+          ? `Enter at least ${formatNumber(minimum)} points.`
+          : ''
   const canSubmit =
     Boolean(selected) &&
+    points !== '' &&
     pointsValue >= minimum &&
     pointsValue <= available &&
     available >= minimum
@@ -58,6 +72,7 @@ export function RedeemRewardsPage() {
         remark: remark.trim() || selected.name,
       })
       setSuccessMessage(`Your ${selected.name} request for ${formatNumber(pointsValue)} points was submitted.`)
+      setPoints('')
       setRemark('')
       await Promise.all([balance.reload(), history.reload()])
     } catch (error) {
@@ -88,17 +103,51 @@ export function RedeemRewardsPage() {
         {error ? <ErrorState message="Unable to load your reward balance." onRetry={balance.reload} /> : null}
 
         {!loading && !error ? (
-          <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="rounded-[1.6rem] border border-teal/15 bg-teal-soft/40 px-6 py-6">
-              <p className="text-xs tracking-[0.16em] text-muted uppercase">Available balance</p>
-              <p className="font-display mt-2 text-4xl text-ink">{formatNumber(available)}</p>
-              <p className="mt-3 text-sm leading-6 text-ink-soft">
-                Minimum redemption is {formatNumber(minimum)} points. Browse the{' '}
-                <Link to={paths.rewards} className="font-medium text-teal hover:underline">
-                  rewards catalog
-                </Link>{' '}
-                for option details.
-              </p>
+          <section className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+            <div className="grid content-start gap-4">
+              <div className="rounded-[1.6rem] border border-teal/15 bg-teal-soft/40 px-6 py-6">
+                <p className="text-xs tracking-[0.16em] text-muted uppercase">Available balance</p>
+                <p className="font-display mt-2 text-4xl text-ink">{formatNumber(available)}</p>
+                <p className="mt-3 text-sm leading-6 text-ink-soft">
+                  Points you can use toward a payout. Browse the{' '}
+                  <Link to={paths.rewards} className="font-medium text-teal hover:underline">
+                    rewards catalog
+                  </Link>{' '}
+                  for option details.
+                </p>
+              </div>
+              <dl className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-line bg-white px-4 py-4">
+                  <dt className="text-[11px] tracking-[0.14em] text-muted uppercase">Minimum</dt>
+                  <dd className="font-display mt-1 text-2xl text-ink">{formatNumber(minimum)}</dd>
+                  <p className="mt-1 text-xs leading-5 text-ink-soft">Points needed to request a payout</p>
+                </div>
+                <div className="rounded-2xl border border-line bg-white px-4 py-4">
+                  <dt className="text-[11px] tracking-[0.14em] text-muted uppercase">Payout methods</dt>
+                  <dd className="font-display mt-1 text-2xl text-ink">{formatNumber(methods.length)}</dd>
+                  <p className="mt-1 text-xs leading-5 text-ink-soft">Options enabled for your account</p>
+                </div>
+                <div className="rounded-2xl border border-line bg-white px-4 py-4">
+                  <dt className="text-[11px] tracking-[0.14em] text-muted uppercase">In review</dt>
+                  <dd className="font-display mt-1 text-2xl text-ink">
+                    {historyReady ? formatNumber(pendingPoints) : history.error ? '—' : '…'}
+                  </dd>
+                  <p className="mt-1 text-xs leading-5 text-ink-soft">
+                    {historyReady
+                      ? `${formatNumber(pendingRequests.length)} pending ${pendingRequests.length === 1 ? 'request' : 'requests'}`
+                      : history.error
+                        ? 'Requests unavailable'
+                        : 'Loading your requests'}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-line bg-white px-4 py-4">
+                  <dt className="text-[11px] tracking-[0.14em] text-muted uppercase">Completed</dt>
+                  <dd className="font-display mt-1 text-2xl text-ink">
+                    {historyReady ? formatNumber(completedRequests.length) : history.error ? '—' : '…'}
+                  </dd>
+                  <p className="mt-1 text-xs leading-5 text-ink-soft">Approved or completed payouts</p>
+                </div>
+              </dl>
             </div>
 
             <form
@@ -140,13 +189,14 @@ export function RedeemRewardsPage() {
                     label="Points to redeem"
                     htmlFor="redeem-amount"
                     required
-                    hint={`Minimum ${formatNumber(minimum)} · Available ${formatNumber(available)}`}
+                    hint={`Minimum: ${formatNumber(minimum)}`}
+                    error={pointsError || undefined}
                   >
                     <NumericInput
                       id="redeem-amount"
                       integer
                       maxDigits={8}
-                      value={points === '' ? minimum || '' : points}
+                      value={points}
                       onValueChange={(value) => setPoints(value === '' ? '' : asNumber(value))}
                     />
                   </Field>

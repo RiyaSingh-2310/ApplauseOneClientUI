@@ -65,6 +65,5 @@ export const memberNav = [
   { to: '/rewards', label: 'Rewards' },
   { to: '/redeem-rewards', label: 'Redeem Rewards' },
   { to: '/history', label: 'Reward History' },
-  { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
 ] as const

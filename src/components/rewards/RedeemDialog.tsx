@@ -30,11 +30,21 @@ export function RedeemDialog({
   const [methodId, setMethodId] = useState(() =>
     resolveRewardMethodId(reward.paymentMethod ?? reward.name),
   )
-  const [redeemPoints, setRedeemPoints] = useState(Math.max(minimum, reward.pointsRequired))
+  const [redeemPoints, setRedeemPoints] = useState<number | ''>('')
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const remaining = points - asNumber(redeemPoints)
-  const canRedeem = asNumber(redeemPoints) >= minimum && asNumber(redeemPoints) <= points && points >= minimum
+  const enteredPoints = redeemPoints === '' ? 0 : asNumber(redeemPoints)
+  const remaining = points - enteredPoints
+  const pointsError =
+    redeemPoints === ''
+      ? ''
+      : enteredPoints > points
+        ? `Enter no more than ${formatNumber(points)} points.`
+        : enteredPoints < minimum
+          ? `Enter at least ${formatNumber(minimum)} points.`
+          : ''
+  const canRedeem =
+    redeemPoints !== '' && enteredPoints >= minimum && enteredPoints <= points && points >= minimum
   const selectedMethod = getRewardMethodById(methodId)
 
   async function confirmRedeem() {
@@ -103,13 +113,18 @@ export function RedeemDialog({
             />
           </Field>
 
-          <Field label="Points to redeem" htmlFor="redeem-points" hint={`Minimum ${formatNumber(minimum)} points.`}>
+          <Field
+            label="Points to redeem"
+            htmlFor="redeem-points"
+            hint={`Minimum: ${formatNumber(minimum)}`}
+            error={pointsError || undefined}
+          >
             <NumericInput
               id="redeem-points"
               integer
               maxDigits={8}
-              value={redeemPoints || ''}
-              onValueChange={(value) => setRedeemPoints(asNumber(value))}
+              value={redeemPoints}
+              onValueChange={(value) => setRedeemPoints(value === '' ? '' : asNumber(value))}
             />
           </Field>
         </div>
