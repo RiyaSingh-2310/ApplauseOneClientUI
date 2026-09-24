@@ -1,31 +1,36 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronDown, LogOut, Settings } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useId, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { paths } from '@/config/paths'
 import { useAuth } from '@/hooks/useAuth'
 import { useMotionConfig } from '@/lib/motion'
 import { givenName, initials, mediaUrl } from '@/lib/utils'
 
-export function ProfileMenu({ onNavigate }: { onNavigate?: () => void }) {
+export function ProfileMenu({
+  onNavigate,
+  open = false,
+  onOpenChange,
+}: {
+  onNavigate?: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const { duration } = useMotionConfig()
-  const [menuPath, setMenuPath] = useState<string | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const menuId = useId()
-  const open = menuPath === location.pathname
 
   useEffect(() => {
     if (!open) return
 
     function onPointerDown(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setMenuPath(null)
+      if (!rootRef.current?.contains(event.target as Node)) onOpenChange?.(false)
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setMenuPath(null)
+      if (event.key === 'Escape') onOpenChange?.(false)
     }
 
     document.addEventListener('pointerdown', onPointerDown)
@@ -34,7 +39,7 @@ export function ProfileMenu({ onNavigate }: { onNavigate?: () => void }) {
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [open])
+  }, [open, onOpenChange])
 
   if (!user) return null
 
@@ -42,7 +47,7 @@ export function ProfileMenu({ onNavigate }: { onNavigate?: () => void }) {
   const firstName = givenName(user.name)
 
   async function onLogout() {
-    setMenuPath(null)
+    onOpenChange?.(false)
     onNavigate?.()
     navigate(paths.home)
     await logout()
@@ -56,7 +61,7 @@ export function ProfileMenu({ onNavigate }: { onNavigate?: () => void }) {
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
-        onClick={() => setMenuPath((value) => (value === location.pathname ? null : location.pathname))}
+        onClick={() => onOpenChange?.(!open)}
       >
         <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-teal text-[11px] font-semibold text-white">
           {photo ? <img src={photo} alt="" className="size-full object-cover" /> : initials(user.name)}
@@ -87,7 +92,7 @@ export function ProfileMenu({ onNavigate }: { onNavigate?: () => void }) {
               role="menuitem"
               to={paths.settings}
               onClick={() => {
-                setMenuPath(null)
+                onOpenChange?.(false)
                 onNavigate?.()
               }}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-ink-soft transition-colors hover:bg-cream hover:text-ink"
