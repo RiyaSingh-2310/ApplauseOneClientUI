@@ -1,4 +1,5 @@
-import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { CircleHelp, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { cardLiftClass } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
@@ -7,6 +8,7 @@ const icons = {
   chat: MessageCircle,
   phone: Phone,
   map: MapPin,
+  help: CircleHelp,
 }
 
 export function ContactMethodCard({
@@ -18,6 +20,7 @@ export function ContactMethodCard({
   icon,
   onAction,
   accent,
+  hoverAccent,
 }: {
   title: string
   copy: string
@@ -27,19 +30,22 @@ export function ContactMethodCard({
   icon: keyof typeof icons
   onAction?: () => void
   accent?: boolean
+  hoverAccent?: boolean
 }) {
   const Icon = icons[icon]
   const className = cn(
     'group flex h-full min-w-0 w-full flex-col rounded-[1.6rem] border border-line bg-white p-6 text-center shadow-card',
     cardLiftClass,
     accent && 'border-teal/20 bg-teal-soft/30',
+    hoverAccent && 'hover:border-teal/40 hover:bg-teal-soft/50',
   )
 
   const action = (
     <span
       className={cn(
-        'mt-auto flex h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium',
+        'mt-auto flex h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium transition-colors duration-200',
         accent ? 'border border-teal bg-teal text-white' : 'border border-line bg-white text-ink',
+        hoverAccent && 'group-hover:border-teal group-hover:bg-teal group-hover:text-white',
       )}
     >
       {cta}
@@ -53,12 +59,20 @@ export function ContactMethodCard({
       </span>
       <h3 className="mt-5 font-display text-xl text-ink">{title}</h3>
       <p className="mt-2 min-h-10 text-sm leading-5 text-ink-soft">{copy}</p>
-      <p className={cn('mt-4 min-h-12 flex-1 text-sm leading-6 font-medium break-words whitespace-pre-line', icon === 'chat' ? 'text-success' : 'text-ink')}>
+      <p className={cn('mt-4 min-h-12 flex-1 text-sm leading-6 font-medium break-words whitespace-pre-line', icon === 'chat' && accent ? 'text-success' : 'text-ink')}>
         {detail}
       </p>
       {action}
     </>
   )
+
+  if (href?.startsWith('/')) {
+    return (
+      <Link to={href} className={className}>
+        {body}
+      </Link>
+    )
+  }
 
   if (href) {
     return (

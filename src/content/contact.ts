@@ -26,13 +26,13 @@ export const contactMethods = [
     icon: 'chat',
   },
   {
-    id: 'phone',
-    title: 'Phone Support',
-    copy: 'Speak directly with our team',
-    detail: '+60 3 2731 9315',
-    cta: 'Call Now',
-    href: 'tel:+60327319315',
-    icon: 'phone',
+    id: 'help',
+    title: 'Help Center',
+    copy: 'Browse guides, FAQs, and answers',
+    detail: 'Articles and tutorials',
+    cta: 'Browse Help',
+    href: '/help',
+    icon: 'help',
   },
   {
     id: 'office',
@@ -94,6 +94,16 @@ export const contactFaqs = [
     a: 'Currently, we provide support in English, Spanish, and French. We’re expanding to more languages soon.',
   },
 ]
+
+export const phoneSupportMethod = {
+  id: 'phone',
+  title: 'Phone Support',
+  copy: 'Speak directly with our team',
+  detail: '+60 3 2731 9315',
+  cta: 'Call Now',
+  href: 'tel:+60327319315',
+  icon: 'phone',
+} as const
 
 export const helpContactIntro = {
   title: 'Contact Our Support Team',

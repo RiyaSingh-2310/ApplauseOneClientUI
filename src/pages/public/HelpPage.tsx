@@ -10,7 +10,7 @@ import { FaqAccordion } from '@/components/shared/FaqAccordion'
 import { PageHero } from '@/components/shared/PageHero'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { contactMethods, helpContactIntro } from '@/content/contact'
+import { contactMethods, helpContactIntro, phoneSupportMethod } from '@/content/contact'
 import { helpFaqs, helpHero, helpTutorial } from '@/content/help'
 import { useMotionConfig, easePremium } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -70,7 +70,7 @@ export function HelpPage() {
   const helpMethods = [
     { ...contactMethods[1], copy: helpContactIntro.liveChatCopy, detail: helpContactIntro.liveChatMeta },
     { ...contactMethods[0], copy: helpContactIntro.emailCopy, detail: helpContactIntro.emailMeta },
-    { ...contactMethods[2], copy: helpContactIntro.phoneCopy, detail: helpContactIntro.phoneMeta },
+    { ...phoneSupportMethod, copy: helpContactIntro.phoneCopy, detail: helpContactIntro.phoneMeta },
   ]
 
   return (

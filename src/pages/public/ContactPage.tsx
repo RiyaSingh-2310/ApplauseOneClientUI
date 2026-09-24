@@ -51,7 +51,7 @@ export function ContactPage() {
                 cta={method.cta}
                 href={method.href}
                 icon={method.icon}
-                accent={method.id === 'chat'}
+                hoverAccent={method.id === 'chat'}
                 onAction={
                   method.id === 'chat'
                     ? () => {
