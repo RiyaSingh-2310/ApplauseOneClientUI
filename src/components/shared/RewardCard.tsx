@@ -45,7 +45,10 @@ export function RewardCard({
     >
       <div className="flex items-start justify-between gap-3 px-5 pt-5">
         <span
-          className="grid size-14 place-items-center rounded-2xl text-sm font-semibold text-white shadow-soft"
+          className={cn(
+            'grid size-14 place-items-center rounded-2xl font-semibold text-white shadow-soft',
+            reward.logoLabel.length > 2 ? 'text-xs tracking-wide' : 'text-sm',
+          )}
           style={{ backgroundColor: reward.accent }}
         >
           {Icon ? <Icon className="size-7" strokeWidth={1.75} /> : reward.logoLabel}

@@ -11,9 +11,9 @@ export const contactMethods = [
     id: 'email',
     title: 'Email Support',
     copy: 'Get help via email within 24 hours',
-    detail: 'admin@arserviceco.com',
+    detail: 'info@applauseone.com',
     cta: 'Send Email',
-    href: 'mailto:admin@arserviceco.com',
+    href: 'mailto:info@applauseone.com',
     icon: 'mail',
   },
   {

@@ -122,21 +122,28 @@ const accents: Record<RewardCategory, string> = {
   charity: '#2a9d8f',
 }
 
+/** Backend payment method is spelled UIP. The catalog shows UPI and still redeems with UIP. */
+export function displayPaymentMethodName(name: string) {
+  return name.trim().toLowerCase() === 'uip' ? 'UPI' : name
+}
+
 export function paymentMethodsToRewards(methods: PaymentMethod[], minimumPayout: number): RewardOption[] {
   return methods.map((method) => {
     const category = paymentMethodCategory(method.name)
+    const name = displayPaymentMethodName(method.name)
     return {
       id: String(method.id),
-      name: method.name,
+      name,
       category,
-      description: `Redeem points via ${method.name}. Requests are reviewed before payout.`,
+      description: `Redeem points via ${name}. Requests are reviewed before payout.`,
       pointsRequired: minimumPayout,
       delivery: category === 'cash' ? 'After approval' : 'Processed after review',
       available: true,
       popular: method.name.toLowerCase() === 'paypal',
       accent: accents[category],
-      logoLabel: method.name.slice(0, 2).toUpperCase(),
+      logoLabel: name.toUpperCase() === 'UPI' ? 'UPI' : name.slice(0, 2).toUpperCase(),
       estimatedValueLabel: `${minimumPayout}+ points`,
+      paymentMethod: method.name,
     }
   })
 }
@@ -146,17 +153,18 @@ export function settingsToRewards(settings: PublicSettings) {
 }
 
 export function mapRewardRequest(record: RewardRequestRecord): RewardRequest {
-  const name = paymentMethodName(record)
+  const rawName = paymentMethodName(record)
+  const name = displayPaymentMethodName(rawName)
   const status = (record.status || 'pending') as RewardRequestStatus
   return {
     id: String(record.id),
-    rewardId: name,
+    rewardId: rawName,
     rewardName: name,
-    category: paymentMethodCategory(name),
+    category: paymentMethodCategory(rawName),
     pointsUsed: asNumber(record.reward_points),
     requestedAt: record.created_at,
     status,
-    paymentMethod: record.payment_method || record.payment_methord || name,
+    paymentMethod: record.payment_method || record.payment_methord || rawName,
     remark: record.remark,
     comment: record.comment,
     processedAt: record.action_date,
