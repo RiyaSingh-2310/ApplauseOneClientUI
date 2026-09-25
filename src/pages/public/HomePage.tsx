@@ -233,11 +233,11 @@ export function HomePage() {
           </AnimatedSection>
           <div className="relative mt-16 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <span
-              className="pointer-events-none absolute top-11 right-[12%] left-[12%] hidden h-px bg-linear-to-r from-transparent via-gold/70 to-transparent xl:block"
+              className="pointer-events-none absolute top-12 left-12 z-0 hidden h-px w-[calc(75%+0.75rem)] bg-gold/55 xl:block"
               aria-hidden="true"
             />
             {steps.map((step, index) => (
-              <AnimatedSection key={step.n} delay={index * 0.06} className="h-full">
+              <AnimatedSection key={step.n} delay={index * 0.06} className="relative z-10 h-full">
                 <article className={cn('flex h-full flex-col rounded-[1.6rem] border border-line/80 bg-white p-6 shadow-card', cardLiftClass)}>
                   <div className="flex items-center justify-between">
                     <span className="relative z-10 grid size-12 place-items-center rounded-full bg-ink font-display text-sm text-gold">
