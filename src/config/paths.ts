@@ -10,6 +10,8 @@ export const paths = {
   termsConditions: '/terms-conditions',
   join: '/join',
   login: '/login',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   verifyEmail: '/verify-email',
   dashboard: '/dashboard',
   history: '/history',

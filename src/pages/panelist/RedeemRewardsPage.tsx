@@ -42,8 +42,10 @@ export function RedeemRewardsPage() {
     methodId && methods.some((method) => method.id === methodId) ? methodId : methods[0]?.id ?? ''
   const selected = getRewardMethodById(resolvedMethodId) ?? methods[0]
   const pointsValue = points === '' ? 0 : asNumber(points)
-  const pointsError =
-    points === ''
+  const noBalance = available <= 0
+  const pointsError = noBalance
+    ? ''
+    : points === ''
       ? ''
       : pointsValue > available
         ? `Enter no more than ${formatNumber(available)} points.`
@@ -51,6 +53,7 @@ export function RedeemRewardsPage() {
           ? `Enter at least ${formatNumber(minimum)} points.`
           : ''
   const canSubmit =
+    !noBalance &&
     Boolean(selected) &&
     points !== '' &&
     pointsValue >= minimum &&
@@ -182,29 +185,35 @@ export function RedeemRewardsPage() {
                       value={resolvedMethodId}
                       onValueChange={setMethodId}
                       methods={methods}
-                      disabled={submitting}
+                      disabled={submitting || noBalance}
                     />
                   </Field>
                   <Field
                     label="Points to redeem"
                     htmlFor="redeem-amount"
                     required
-                    hint={`Minimum: ${formatNumber(minimum)}`}
+                    hint={noBalance ? 'No available balance' : `Minimum: ${formatNumber(minimum)}`}
                     error={pointsError || undefined}
                   >
                     <NumericInput
                       id="redeem-amount"
                       integer
                       maxDigits={8}
-                      value={points}
-                      onValueChange={(value) => setPoints(value === '' ? '' : asNumber(value))}
+                      value={noBalance ? 0 : points}
+                      disabled={noBalance || submitting}
+                      placeholder={noBalance ? '0 points available' : undefined}
+                      onValueChange={(value) => {
+                        if (noBalance) return
+                        setPoints(value === '' ? '' : asNumber(value))
+                      }}
                     />
                   </Field>
                   <Field label="Remark (optional)" htmlFor="redeem-remark">
                     <input
                       id="redeem-remark"
-                      className="h-11 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-ink shadow-soft focus-visible:border-teal focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/10"
+                      className="h-11 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-ink shadow-soft focus-visible:border-teal focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/10 disabled:cursor-not-allowed disabled:bg-cream disabled:text-muted"
                       value={remark}
+                      disabled={noBalance || submitting}
                       onChange={(event) => setRemark(event.target.value)}
                       placeholder="Optional note for this request"
                       maxLength={200}

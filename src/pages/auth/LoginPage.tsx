@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
 import { LoginForm } from '@/components/auth/LoginForm'
+import { paths } from '@/config/paths'
 import { useAuth } from '@/hooks/useAuth'
 import { useMotionConfig } from '@/lib/motion'
 
@@ -18,12 +19,12 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { duration } = useMotionConfig()
-  const view = location.pathname === '/forgot-password' || location.pathname === '/reset-password' ? 'forgot' : 'login'
+  const view = location.pathname === paths.forgotPassword || location.pathname === paths.resetPassword ? 'forgot' : 'login'
   const from = (location.state as { from?: string } | null)?.from
   const resetToken = params.get('token') ?? ''
 
   if (!ready) return null
-  if (user) return <Navigate to="/dashboard" replace />
+  if (user && location.pathname !== paths.resetPassword) return <Navigate to="/dashboard" replace />
 
   function showLogin() {
     navigate('/login', { replace: location.pathname !== '/login', state: { from } })
@@ -93,7 +94,7 @@ export function LoginPage() {
                   <div className="mt-8">
                     <LoginForm
                       redirectTo={from}
-                      onForgot={() => navigate('/forgot-password', { state: { from } })}
+                      onForgot={() => navigate(paths.forgotPassword, { state: { from } })}
                     />
                   </div>
                   <p className="mt-6 text-center text-sm text-ink-soft">

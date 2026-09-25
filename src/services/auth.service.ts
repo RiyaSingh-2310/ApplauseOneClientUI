@@ -110,18 +110,11 @@ export const authService = {
   resetPassword(payload: ResetPasswordPayload) {
     return apiRequest<unknown>('/auth/reset-password', {
       method: 'POST',
-      body: payload,
-      auth: false,
-    })
-  },
-  changePassword(payload: { currentPassword: string; password: string }) {
-    return apiRequest<unknown>('/auth/change-password', {
-      method: 'POST',
       body: {
-        current_password: payload.currentPassword,
+        token: payload.token,
         password: payload.password,
-        password_confirmation: payload.password,
       },
+      auth: false,
     })
   },
   logout() {

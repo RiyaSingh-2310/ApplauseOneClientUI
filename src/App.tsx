@@ -58,10 +58,10 @@ export default function App() {
             <Route path={`${paths.verifyEmail}/:token`} element={<VerifyPage />} />
             <Route path="/verify" element={<VerifySearchRedirect />} />
             <Route path="/verify/:token" element={<VerifyPathRedirect />} />
+            <Route path={paths.resetPassword} element={<LoginPage />} />
             <Route element={<GuestRoute />}>
               <Route path={paths.login} element={<LoginPage />} />
-              <Route path="/forgot-password" element={<LoginPage />} />
-              <Route path="/reset-password" element={<LoginPage />} />
+              <Route path={paths.forgotPassword} element={<LoginPage />} />
             </Route>
             <Route element={<ProtectedRoute />}>
               <Route path={paths.dashboard} element={<DashboardPage />} />

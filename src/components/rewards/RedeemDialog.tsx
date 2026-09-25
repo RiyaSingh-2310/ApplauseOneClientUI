@@ -34,9 +34,11 @@ export function RedeemDialog({
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const enteredPoints = redeemPoints === '' ? 0 : asNumber(redeemPoints)
-  const remaining = points - enteredPoints
-  const pointsError =
-    redeemPoints === ''
+  const noBalance = points <= 0
+  const remaining = Math.max(points - enteredPoints, 0)
+  const pointsError = noBalance
+    ? ''
+    : redeemPoints === ''
       ? ''
       : enteredPoints > points
         ? `Enter no more than ${formatNumber(points)} points.`
@@ -44,7 +46,11 @@ export function RedeemDialog({
           ? `Enter at least ${formatNumber(minimum)} points.`
           : ''
   const canRedeem =
-    redeemPoints !== '' && enteredPoints >= minimum && enteredPoints <= points && points >= minimum
+    !noBalance &&
+    redeemPoints !== '' &&
+    enteredPoints >= minimum &&
+    enteredPoints <= points &&
+    points >= minimum
   const selectedMethod = getRewardMethodById(methodId)
 
   async function confirmRedeem() {
@@ -109,22 +115,27 @@ export function RedeemDialog({
               id="reward-method"
               value={methodId}
               onValueChange={setMethodId}
-              disabled={submitting}
+              disabled={submitting || noBalance}
             />
           </Field>
 
           <Field
             label="Points to redeem"
             htmlFor="redeem-points"
-            hint={`Minimum: ${formatNumber(minimum)}`}
+            hint={noBalance ? 'No available balance' : `Minimum: ${formatNumber(minimum)}`}
             error={pointsError || undefined}
           >
             <NumericInput
               id="redeem-points"
               integer
               maxDigits={8}
-              value={redeemPoints}
-              onValueChange={(value) => setRedeemPoints(value === '' ? '' : asNumber(value))}
+              value={noBalance ? 0 : redeemPoints}
+              disabled={noBalance || submitting}
+              placeholder={noBalance ? '0 points available' : undefined}
+              onValueChange={(value) => {
+                if (noBalance) return
+                setRedeemPoints(value === '' ? '' : asNumber(value))
+              }}
             />
           </Field>
         </div>

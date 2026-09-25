@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { paths } from '@/config/paths'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -21,6 +23,7 @@ export function ForgotPasswordForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const navigate = useNavigate()
   const [stage, setStage] = useState<'request' | 'sent' | 'reset' | 'done'>(initialToken ? 'reset' : 'request')
 
   async function onRequest(event: FormEvent) {
@@ -32,7 +35,12 @@ export function ForgotPasswordForm({
     setSubmitting(true)
     setError('')
     try {
-      await authService.forgotPassword({ email: email.trim() })
+      const data = await authService.forgotPassword({ email: email.trim() })
+      const token = data?.reset_token?.trim()
+      if (token) {
+        navigate(`${paths.resetPassword}?token=${encodeURIComponent(token)}`)
+        return
+      }
       setStage('sent')
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : 'Unable to process your request. Please try again.')
@@ -71,7 +79,7 @@ export function ForgotPasswordForm({
     return (
       <div>
         <p className="rounded-xl bg-success-soft px-4 py-3 text-sm text-success" role="status">
-          Check your email. If that address is on an Applause One account, we sent password reset instructions.
+          If that email is on an Applause One account, a reset was started. Open the reset link to choose a new password.
         </p>
         <Button className="mt-6 w-full" variant="outline" type="button" onClick={onBack}>
           Back to Login
