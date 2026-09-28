@@ -34,7 +34,9 @@ export function LoginForm({
   const { login, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = redirectTo || (location.state as { from?: string } | null)?.from || '/dashboard'
+  const locationState = location.state as { from?: string; passwordReset?: boolean } | null
+  const from = redirectTo || locationState?.from || '/dashboard'
+  const passwordReset = Boolean(locationState?.passwordReset)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -81,6 +83,11 @@ export function LoginForm({
 
   return (
     <form className="grid gap-5" onSubmit={onSubmit} noValidate>
+      {passwordReset ? (
+        <p className="rounded-xl bg-success-soft px-4 py-3 text-sm text-success" role="status">
+          Your password was reset. Sign in with your new password.
+        </p>
+      ) : null}
       {formError ? (
         <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
           {formError}

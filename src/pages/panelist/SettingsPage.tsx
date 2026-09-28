@@ -22,7 +22,7 @@ import { authService } from '@/services/auth.service'
 import { onboardingService } from '@/services/onboarding.service'
 import { panelistService } from '@/services/panelist.service'
 import { ApiRequestError } from '@/services/errors'
-import type { OnboardingAnswerInput } from '@/types/api'
+import type { OnboardingAnswerInput, OnboardingStepGroup } from '@/types/api'
 
 export function SettingsPage() {
   const { refresh, logout } = useAuth()
@@ -135,7 +135,7 @@ export function SettingsPage() {
       </div>
     )
   }
-  if (!data || !form) {
+  if (!data || !form || !seeded) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <EmptyState title="Your account could not be loaded." />
@@ -145,6 +145,7 @@ export function SettingsPage() {
 
   const photo = mediaUrl(data.user.photo)
   const grouped = data.steps.filter((step) => Number(step.step_no) !== 5)
+  const personalDirty = form.name.trim() !== seeded.name.trim() || form.phone !== seeded.phone
 
   return (
     <div>
@@ -212,7 +213,7 @@ export function SettingsPage() {
             />
           </Field>
           <div className="flex justify-end">
-            <Button onClick={() => void onSave()} disabled={saving}>
+            <Button onClick={() => void onSave()} disabled={saving || !personalDirty}>
               {saving ? 'Saving…' : 'Save changes'}
             </Button>
           </div>
@@ -229,7 +230,7 @@ export function SettingsPage() {
               onChange={updateAnswer}
             />
             <div className="flex justify-end">
-              <Button onClick={() => void onSave()} disabled={saving}>
+              <Button onClick={() => void onSave()} disabled={saving || !sectionDirty(step, form.answers, seeded.answers)}>
                 {saving ? 'Saving…' : 'Save changes'}
               </Button>
             </div>
@@ -271,52 +272,45 @@ function Section({ title, description, children }: { title: string; description?
   )
 }
 
+function answerKey(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean).sort().join('|')
+  return String(value ?? '').trim()
+}
+
+function sectionDirty(
+  step: OnboardingStepGroup,
+  current: Record<string, string | string[]>,
+  original: Record<string, string | string[]>,
+) {
+  return flattenQuestions([step]).some((question) => {
+    const key = String(question.id)
+    return answerKey(current[key]) !== answerKey(original[key])
+  })
+}
+
 function ChangePasswordForm() {
-  const { user } = useAuth()
   const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState('')
   const [formError, setFormError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const canUpdate = currentPassword.length > 0 && password.length > 0 && confirmPassword.length > 0 && password === confirmPassword
 
-  async function onSubmit(event: FormEvent) {
+  function onSubmit(event: FormEvent) {
     event.preventDefault()
     const next = validateNewPassword(password, confirmPassword)
     if (!currentPassword) next.currentPassword = 'Enter your current password.'
     setErrors(next)
-    setMessage('')
     setFormError('')
-    if (Object.keys(next).length) return
-    if (!user?.email) {
-      setFormError('Sign in again before changing your password.')
-      return
-    }
-    setSubmitting(true)
-    try {
-      await authService.changePassword({
-        email: user.email,
-        currentPassword,
-        password,
-      })
-      setCurrentPassword('')
-      setPassword('')
-      setConfirmPassword('')
-      setMessage('Your password was updated.')
-    } catch (err) {
-      const requestError = err instanceof ApiRequestError ? err : null
-      if (requestError?.fieldErrors) setErrors((current) => ({ ...current, ...requestError.fieldErrors }))
-      setFormError(requestError?.message ?? 'Unable to update your password.')
-    } finally {
-      setSubmitting(false)
-    }
+    if (Object.keys(next).length || !canUpdate) return
+    setFormError(
+      'This screen cannot change your password. The reset API returns 410 unless it receives the token from the password-reset email, not your sign-in token. Open that email link to set a new password.',
+    )
   }
 
   return (
     <Section title="Change password" description="Use a unique password with at least 8 characters, including a letter and a number.">
       <form className="grid gap-4" onSubmit={onSubmit} noValidate>
-        {message ? <p className="rounded-xl bg-success-soft px-4 py-3 text-sm text-success">{message}</p> : null}
         {formError ? (
           <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
             {formError}
@@ -348,8 +342,8 @@ function ChangePasswordForm() {
           />
         </Field>
         <div className="flex justify-end">
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Updating…' : 'Update password'}
+          <Button type="submit" disabled={!canUpdate}>
+            Update password
           </Button>
         </div>
       </form>

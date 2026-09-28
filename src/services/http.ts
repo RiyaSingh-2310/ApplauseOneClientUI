@@ -10,6 +10,7 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   auth?: boolean
+  withMessage?: boolean
 }
 
 function parseFieldErrors(errors: unknown): Record<string, string> | undefined {
@@ -54,7 +55,15 @@ function toError(payload: unknown, status: number) {
   )
 }
 
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export function apiRequest<T>(
+  path: string,
+  options: RequestOptions & { withMessage: true },
+): Promise<{ data: T; message: string }>
+export function apiRequest<T>(path: string, options?: RequestOptions): Promise<T>
+export async function apiRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T | { data: T; message: string }> {
   if (!API_BASE_URL) {
     throw new ApiRequestError({ message: 'API base URL is not configured.' })
   }
@@ -116,12 +125,18 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   const envelope = payload as ApiEnvelope<T> | null
+  const message =
+    envelope && typeof envelope === 'object' && 'message' in envelope && typeof envelope.message === 'string'
+      ? envelope.message
+      : ''
   if (envelope && typeof envelope === 'object' && 'success' in envelope) {
     if (!envelope.success) {
       throw toError(envelope, response.status)
     }
+    if (options.withMessage) return { data: envelope.data as T, message }
     return envelope.data as T
   }
 
+  if (options.withMessage) return { data: payload as T, message }
   return payload as T
 }

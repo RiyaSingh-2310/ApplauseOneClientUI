@@ -1,3 +1,4 @@
+import { clientResetPasswordPageUrl } from '@/config/env'
 import type { AuthSession, ForgotPasswordPayload, LoginPayload, ResetPasswordPayload } from '@/types/auth'
 import type { AuthSuccessData, Panelist, TestEmailData } from '@/types/api'
 import { ApiRequestError } from './errors'
@@ -101,58 +102,25 @@ export const authService = {
     }).then(() => ({ emailSent: true as const }))
   },
   forgotPassword(payload: ForgotPasswordPayload) {
-    return apiRequest<{ reset_token?: string }>('/auth/forgot-password', {
+    return apiRequest<undefined>('/auth/forgot-password', {
       method: 'POST',
-      body: payload,
       auth: false,
+      withMessage: true,
+      body: {
+        email: payload.email.trim(),
+        page_url: clientResetPasswordPageUrl(),
+      },
     })
   },
   resetPassword(payload: ResetPasswordPayload) {
     return apiRequest<unknown>('/auth/reset-password', {
       method: 'POST',
+      auth: false,
       body: {
-        token: payload.token,
+        token: payload.token.trim(),
         password: payload.password,
       },
-      auth: false,
     })
-  },
-  /**
-   * ApplauseOne API has no POST /auth/change-password.
-   * Signed-in changes use the documented reset flow:
-   * 1. POST /auth/login confirms the current password (auth omitted so a 401 does not end the session).
-   * 2. POST /auth/forgot-password returns data.reset_token for an existing account.
-   * 3. POST /auth/reset-password sets the new password with that token.
-   */
-  async changePassword(payload: { email: string; currentPassword: string; password: string }) {
-    try {
-      await apiRequest<AuthSuccessData>('/auth/login', {
-        method: 'POST',
-        auth: false,
-        body: { email: payload.email, password: payload.currentPassword },
-      })
-    } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 401) {
-        throw new ApiRequestError(
-          {
-            message: 'Current password is incorrect.',
-            fieldErrors: { currentPassword: 'Current password is incorrect.' },
-          },
-          401,
-        )
-      }
-      throw error
-    }
-
-    const issued = await authService.forgotPassword({ email: payload.email })
-    const token = issued?.reset_token?.trim()
-    if (!token) {
-      throw new ApiRequestError({
-        message:
-          'Password could not be changed. POST /auth/forgot-password did not return a reset token. The backend must include data.reset_token so the app can call POST /auth/reset-password.',
-      })
-    }
-    await authService.resetPassword({ token, password: payload.password })
   },
   logout() {
     return apiRequest<unknown>('/auth/logout', { method: 'POST' })

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { paths } from '@/config/paths'
 import { Button } from '@/components/ui/button'
@@ -22,9 +22,23 @@ export function ForgotPasswordForm({
   const [confirmPassword, setConfirmPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
+  const [sentMessage, setSentMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
   const [stage, setStage] = useState<'request' | 'sent' | 'reset' | 'done'>(initialToken ? 'reset' : 'request')
+
+  useEffect(() => {
+    if (!initialToken.trim()) return
+    setStage((current) => (current === 'request' ? 'reset' : current))
+  }, [initialToken])
+
+  useEffect(() => {
+    if (stage !== 'done') return
+    const timer = window.setTimeout(() => {
+      navigate(paths.login, { replace: true, state: { passwordReset: true } })
+    }, 1600)
+    return () => window.clearTimeout(timer)
+  }, [stage, navigate])
 
   async function onRequest(event: FormEvent) {
     event.preventDefault()
@@ -35,15 +49,21 @@ export function ForgotPasswordForm({
     setSubmitting(true)
     setError('')
     try {
-      const data = await authService.forgotPassword({ email: email.trim() })
-      const token = data?.reset_token?.trim()
-      if (token) {
-        navigate(`${paths.resetPassword}?token=${encodeURIComponent(token)}`)
+      const result = await authService.forgotPassword({ email: email.trim() })
+      const message = result.message?.trim()
+      if (!message) {
+        setError('The server did not confirm that a reset email was sent.')
         return
       }
+      setSentMessage(message)
       setStage('sent')
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : 'Unable to process your request. Please try again.')
+      const requestError = err instanceof ApiRequestError ? err : null
+      setError(
+        requestError?.fieldErrors?.email ||
+          requestError?.message ||
+          'Unable to process your request. Please try again.',
+      )
     } finally {
       setSubmitting(false)
     }
@@ -65,11 +85,10 @@ export function ForgotPasswordForm({
       setStage('done')
     } catch (err) {
       const requestError = err instanceof ApiRequestError ? err : null
-      if (requestError?.status === 410) {
-        setError('This reset link has expired. Please request a new one.')
-      } else {
-        setError(requestError?.message ?? 'Unable to reset your password. Please try again.')
+      if (requestError?.fieldErrors?.password) {
+        setFieldErrors((current) => ({ ...current, password: requestError.fieldErrors?.password ?? '' }))
       }
+      setError(requestError?.message ?? 'Unable to reset your password. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -79,7 +98,7 @@ export function ForgotPasswordForm({
     return (
       <div>
         <p className="rounded-xl bg-success-soft px-4 py-3 text-sm text-success" role="status">
-          If that email is on an Applause One account, a reset was started. Open the reset link to choose a new password.
+          {sentMessage}
         </p>
         <Button className="mt-6 w-full" variant="outline" type="button" onClick={onBack}>
           Back to Login

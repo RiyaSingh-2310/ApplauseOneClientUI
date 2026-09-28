@@ -19,3 +19,9 @@ export const CLIENT_APP_URL = (
 export function clientVerifyEmailUrl(token: string) {
   return `${CLIENT_APP_URL}/verify-email?token=${encodeURIComponent(token)}`
 }
+
+/** Deployed Client UI reset page. Email links must not use localhost or the current browser origin. */
+export function clientResetPasswordPageUrl() {
+  const origin = (import.meta.env.VITE_CLIENT_BASE_URL || DEFAULT_CLIENT_APP_URL).replace(/\/$/, '')
+  return `${origin}/reset-password`
+}
