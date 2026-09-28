@@ -304,7 +304,7 @@ function ChangePasswordForm() {
     setFormError('')
     if (Object.keys(next).length || !canUpdate) return
     setFormError(
-      'This screen cannot change your password. The reset API returns 410 unless it receives the token from the password-reset email, not your sign-in token. Open that email link to set a new password.',
+      'Your password was not changed. POST /auth/reset-password only accepts the reset token from the email link. Sending the sign-in token makes the API return “Invalid or expired reset token.” Open the link in the reset email to set a new password.',
     )
   }
 
