@@ -272,14 +272,16 @@ function Section({ title, description, children }: { title: string; description?
 }
 
 function ChangePasswordForm() {
+  const { user } = useAuth()
   const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState('')
   const [formError, setFormError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault()
     const next = validateNewPassword(password, confirmPassword)
     if (!currentPassword) next.currentPassword = 'Enter your current password.'
@@ -287,8 +289,28 @@ function ChangePasswordForm() {
     setMessage('')
     setFormError('')
     if (Object.keys(next).length) return
-    // The API has no authenticated change-password endpoint. Do not call one.
-    setFormError('Password change is not available.')
+    if (!user?.email) {
+      setFormError('Sign in again before changing your password.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await authService.changePassword({
+        email: user.email,
+        currentPassword,
+        password,
+      })
+      setCurrentPassword('')
+      setPassword('')
+      setConfirmPassword('')
+      setMessage('Your password was updated.')
+    } catch (err) {
+      const requestError = err instanceof ApiRequestError ? err : null
+      if (requestError?.fieldErrors) setErrors((current) => ({ ...current, ...requestError.fieldErrors }))
+      setFormError(requestError?.message ?? 'Unable to update your password.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -326,7 +348,9 @@ function ChangePasswordForm() {
           />
         </Field>
         <div className="flex justify-end">
-          <Button type="submit">Update password</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Updating…' : 'Update password'}
+          </Button>
         </div>
       </form>
     </Section>
