@@ -8,21 +8,31 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { NumericInput } from '@/components/ui/numeric-input'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { PhoneInput } from '@/components/forms/PhoneInput'
 import { paths } from '@/config/paths'
+import { composePhone, parsePhone } from '@/content/countries'
+import { profileSectionCopy, type ProfileSectionId } from '@/content/profileQuestions'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
-import { answersToValues, buildOnboardingPayload, flattenQuestions } from '@/lib/apiMap'
 import { digitsOnly } from '@/lib/numeric'
+import {
+  answersToFormValues,
+  buildProfileAnswers,
+  buildProfileSections,
+  isProfessionalEmployment,
+  type AnswerValues,
+  type FormQuestion,
+} from '@/lib/profileQuestions'
 import { formatDate, mediaUrl } from '@/lib/utils'
-import { PHONE_PATTERN, validateNewPassword } from '@/lib/validation'
+import { PHONE_MAX_DIGITS, validateNewPassword, validatePhone } from '@/lib/validation'
 import { authService } from '@/services/auth.service'
 import { onboardingService } from '@/services/onboarding.service'
 import { panelistService } from '@/services/panelist.service'
 import { ApiRequestError } from '@/services/errors'
-import type { OnboardingAnswerInput, OnboardingStepGroup } from '@/types/api'
+
+const settingsSectionIds: ProfileSectionId[] = ['demographics', 'professional', 'lifestyle', 'preferences']
 
 export function SettingsPage() {
   const { refresh, logout } = useAuth()
@@ -30,8 +40,9 @@ export function SettingsPage() {
   const { data, loading, error, reload } = useAsync(() => panelistService.getProfile())
   const [draft, setDraft] = useState<{
     name: string
+    phoneCountry: string
     phone: string
-    answers: Record<string, string | string[]>
+    answers: AnswerValues
   } | null>(null)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -39,48 +50,64 @@ export function SettingsPage() {
   const [saveError, setSaveError] = useState('')
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-  const seeded = data
-    ? {
-        name: data.user.name,
-        phone: digitsOnly(data.user.phone ?? '', 15),
-        answers: answersToValues(data.answers),
-      }
-    : null
+  const sections = useMemo(() => {
+    const built = buildProfileSections(data?.steps ?? [])
+    // Settings only shows questions the API can store.
+    for (const id of settingsSectionIds) built[id] = built[id].filter((question) => question.api)
+    return built
+  }, [data])
+  const seeded = useMemo(() => {
+    if (!data) return null
+    const phone = parsePhone(data.user.phone)
+    return {
+      name: data.user.name,
+      phoneCountry: phone.country,
+      phone: digitsOnly(phone.number, PHONE_MAX_DIGITS),
+      answers: answersToFormValues(
+        data.answers,
+        settingsSectionIds.flatMap((id) => sections[id]),
+      ),
+    }
+  }, [data, sections])
   const form = draft ?? seeded
-  const questions = useMemo(() => flattenQuestions(data?.steps ?? []), [data])
+  const visibleSectionIds = form
+    ? settingsSectionIds.filter(
+        (id) => sections[id].length && (id !== 'professional' || isProfessionalEmployment(sections, form.answers)),
+      )
+    : []
 
   function setForm(updater: (current: NonNullable<typeof form>) => NonNullable<typeof form>) {
     if (!form) return
     setDraft(updater(form))
   }
 
-  function updateAnswer(questionId: number, value: string | string[]) {
+  function updateAnswer(key: string, value: string | string[]) {
     setForm((current) => ({
       ...current,
-      answers: { ...current.answers, [String(questionId)]: value },
+      answers: { ...current.answers, [key]: value },
     }))
   }
 
   async function onSave() {
-    if (!data || !form) return
-    if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
-      setSaveError('Enter 7 to 15 digits, with no letters or symbols.')
+    if (!data || !form || !seeded) return
+    const phoneError = validatePhone(form.phoneCountry, form.phone)
+    if (phoneError) {
+      setSaveError(phoneError)
       return
     }
     setSaving(true)
     setSaveError('')
     setMessage('')
     try {
-      await authService.updateMe({ name: form.name.trim(), phone: form.phone.trim() })
-      const payload: OnboardingAnswerInput[] = buildOnboardingPayload(questions, form.answers, {
-        acceptTerms: true,
-        acceptPrivacy: true,
-        emailInvitations: true,
+      const phoneChanged = form.phone !== seeded.phone || form.phoneCountry !== seeded.phoneCountry
+      await authService.updateMe({
+        name: form.name.trim(),
+        phone: phoneChanged ? composePhone(form.phoneCountry, form.phone) : (data.user.phone ?? ''),
       })
-      const editable = payload.filter((item) => {
-        const question = questions.find((entry) => entry.id === item.question_id)
-        return question && question.step_no !== 5
-      })
+      const editable = buildProfileAnswers(
+        visibleSectionIds.flatMap((id) => sections[id]),
+        form.answers,
+      ).answers
       if (editable.length) await onboardingService.saveAnswers(editable)
       await refresh()
       setDraft(null)
@@ -144,8 +171,8 @@ export function SettingsPage() {
   }
 
   const photo = mediaUrl(data.user.photo)
-  const grouped = data.steps.filter((step) => Number(step.step_no) !== 5)
-  const personalDirty = form.name.trim() !== seeded.name.trim() || form.phone !== seeded.phone
+  const personalDirty =
+    form.name.trim() !== seeded.name.trim() || form.phone !== seeded.phone || form.phoneCountry !== seeded.phoneCountry
 
   return (
     <div>
@@ -202,14 +229,14 @@ export function SettingsPage() {
           <Field label="Email" htmlFor="settings-email" hint="Email cannot be changed here.">
             <Input id="settings-email" value={data.user.email} readOnly />
           </Field>
-          <Field label="Phone number" htmlFor="settings-phone">
-            <NumericInput
+          <Field label="Mobile number" htmlFor="settings-phone" hint="Optional">
+            <PhoneInput
               id="settings-phone"
-              autoComplete="tel"
-              integer
-              maxDigits={15}
-              value={form.phone}
-              onValueChange={(value) => setForm((current) => ({ ...current, phone: value }))}
+              country={form.phoneCountry}
+              number={form.phone}
+              maxDigits={PHONE_MAX_DIGITS}
+              onCountryChange={(value) => setForm((current) => ({ ...current, phoneCountry: value }))}
+              onNumberChange={(value) => setForm((current) => ({ ...current, phone: value }))}
             />
           </Field>
           <div className="flex justify-end">
@@ -221,16 +248,16 @@ export function SettingsPage() {
 
         <ChangePasswordForm />
 
-        {grouped.map((step) => (
-          <Section key={step.step_no} title={step.step_name} description="Used to match relevant studies to your profile.">
+        {visibleSectionIds.map((id) => (
+          <Section key={id} title={profileSectionCopy[id].heading} description="Used to match relevant studies to your profile.">
             <OnboardingFields
-              questions={flattenQuestions([step])}
+              questions={sections[id]}
               values={form.answers}
               errors={{}}
               onChange={updateAnswer}
             />
             <div className="flex justify-end">
-              <Button onClick={() => void onSave()} disabled={saving || !sectionDirty(step, form.answers, seeded.answers)}>
+              <Button onClick={() => void onSave()} disabled={saving || !sectionDirty(sections[id], form.answers, seeded.answers)}>
                 {saving ? 'Saving…' : 'Save changes'}
               </Button>
             </div>
@@ -277,15 +304,8 @@ function answerKey(value: string | string[] | undefined) {
   return String(value ?? '').trim()
 }
 
-function sectionDirty(
-  step: OnboardingStepGroup,
-  current: Record<string, string | string[]>,
-  original: Record<string, string | string[]>,
-) {
-  return flattenQuestions([step]).some((question) => {
-    const key = String(question.id)
-    return answerKey(current[key]) !== answerKey(original[key])
-  })
+function sectionDirty(questions: FormQuestion[], current: AnswerValues, original: AnswerValues) {
+  return questions.some((question) => answerKey(current[question.key]) !== answerKey(original[question.key]))
 }
 
 function ChangePasswordForm() {

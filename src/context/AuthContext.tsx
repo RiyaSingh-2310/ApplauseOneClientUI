@@ -1,4 +1,5 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { composePhone } from '@/content/countries'
 import { takePendingOnboarding } from '@/lib/pendingOnboarding'
 import { authService } from '@/services/auth.service'
 import { onboardingService } from '@/services/onboarding.service'
@@ -99,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: `${payload.firstName.trim()} ${payload.lastName.trim()}`.trim(),
       email: payload.email.trim(),
       password: payload.password,
-      phone: payload.phone.trim() || undefined,
+      phone: composePhone(payload.phoneCountry, payload.phone) || undefined,
     })
     return { status: 'registered', needsVerification: true, emailSent: result.emailSent, emailError: result.emailError }
   }, [])

@@ -12,21 +12,29 @@ import { PersonalStep, PrivacyStep } from '@/components/forms/join/JoinSteps'
 import { EmptyState, ErrorState, LoadingSkeleton } from '@/components/shared/PageState'
 import { Button } from '@/components/ui/button'
 import { joinIncentive, joinTrust } from '@/config/brand'
+import { countryName } from '@/content/countries'
+import type { ProfileSectionId } from '@/content/profileQuestions'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
-import { buildOnboardingPayload, flattenQuestions, questionsForApiStep } from '@/lib/apiMap'
+import { dateOfBirthToIso } from '@/lib/dateOfBirth'
 import { savePendingOnboarding } from '@/lib/pendingOnboarding'
+import {
+  buildAccountAnswers,
+  buildConsentAnswers,
+  buildProfileAnswers,
+  buildProfileSections,
+  isProfessionalEmployment,
+  type AnswerValue,
+} from '@/lib/profileQuestions'
 import { scrollToRegistrationStep } from '@/lib/scrollToStep'
 import { useMotionConfig } from '@/lib/motion'
 import {
+  activeRegisterSteps,
   emptyRegisterForm,
   firstInvalidStep,
-  JOIN_API_STEPS,
-  isRegisterFormValid,
-  isRegisterStepValid,
-  registerSteps,
   validateRegisterForm,
   validateRegisterStep,
+  type RegisterStepId,
 } from '@/lib/validation'
 import { authService, DUPLICATE_EMAIL_MESSAGE } from '@/services/auth.service'
 import { ApiRequestError } from '@/services/errors'
@@ -34,12 +42,17 @@ import { onboardingService } from '@/services/onboarding.service'
 import type { RegisterPayload } from '@/types/auth'
 
 const trustIcons = [Lock, ShieldCheck, Sparkles, Gift]
+const profileStepIds: ProfileSectionId[] = ['demographics', 'professional', 'lifestyle', 'preferences']
+
+function isProfileStep(id: RegisterStepId): id is ProfileSectionId {
+  return (profileStepIds as RegisterStepId[]).includes(id)
+}
 
 export function JoinPage() {
   const { user, register } = useAuth()
   const { duration } = useMotionConfig()
   const questionsState = useAsync(() => onboardingService.getQuestions())
-  const [step, setStep] = useState(0)
+  const [stepId, setStepId] = useState<RegisterStepId>('account')
   const [form, setForm] = useState<RegisterPayload>(emptyRegisterForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState('')
@@ -49,16 +62,21 @@ export function JoinPage() {
   const [success, setSuccess] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState('')
+  const [invalidAttempt, setInvalidAttempt] = useState(0)
+  const formRef = useRef<HTMLFormElement>(null)
   const stepSectionRef = useRef<HTMLDivElement>(null)
   const skipInitialScroll = useRef(true)
   const emailAvailableRef = useRef('')
-  const current = registerSteps[step] ?? registerSteps[0]
-  const isLast = step === registerSteps.length - 1
-  const steps = questionsState.data?.steps ?? []
-  const stepValid = isRegisterStepValid(form, step, steps)
-  const formValid = isRegisterFormValid(form, steps)
-  const liveErrors = isLast ? validateRegisterForm(form, steps) : validateRegisterStep(form, step, steps)
-  const baseErrors = step === 4 || isLast || Object.keys(errors).length ? liveErrors : errors
+  const apiSteps = questionsState.data?.steps
+  const sections = useMemo(() => buildProfileSections(apiSteps ?? []), [apiSteps])
+  const includeProfessional = isProfessionalEmployment(sections, form.answers)
+  const flowSteps = activeRegisterSteps(includeProfessional)
+  const foundIndex = flowSteps.findIndex((item) => item.id === stepId)
+  const stepIndex = foundIndex === -1 ? flowSteps.findIndex((item) => item.id === 'lifestyle') : foundIndex
+  const current = flowSteps[stepIndex] ?? flowSteps[0]
+  const isLast = stepIndex === flowSteps.length - 1
+  const liveErrors = isLast ? validateRegisterForm(form, sections, flowSteps) : validateRegisterStep(form, current.id, sections)
+  const baseErrors = Object.keys(errors).length ? liveErrors : {}
   const shownErrors =
     emailAvailabilityError && !baseErrors.email
       ? { ...baseErrors, email: emailAvailabilityError }
@@ -73,7 +91,15 @@ export function JoinPage() {
       scrollToRegistrationStep(stepSectionRef.current)
     }, 80)
     return () => window.clearTimeout(timer)
-  }, [step])
+  }, [stepId])
+
+  useEffect(() => {
+    if (!invalidAttempt) return
+    const target = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')
+    if (!target) return
+    target.focus({ preventScroll: true })
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [invalidAttempt])
 
   function update<K extends keyof RegisterPayload>(key: K, value: RegisterPayload[K]) {
     setForm((currentForm) => ({ ...currentForm, [key]: value }))
@@ -83,22 +109,32 @@ export function JoinPage() {
     }
   }
 
-  function updateAnswer(questionId: number, value: string | string[]) {
+  function updateAnswer(key: string, value: AnswerValue) {
     setForm((currentForm) => ({
       ...currentForm,
-      answers: { ...currentForm.answers, [String(questionId)]: value },
+      answers: { ...currentForm.answers, [key]: value },
     }))
+  }
+
+  function goToStep(index: number) {
+    const target = flowSteps[index]
+    if (!target) return
+    setErrors({})
+    setStepId(target.id)
   }
 
   async function goNext() {
     if (checkingEmail || submitting) return
-    const nextErrors = validateRegisterStep(form, step, steps)
+    const nextErrors = validateRegisterStep(form, current.id, sections)
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length) return
+    if (Object.keys(nextErrors).length) {
+      setInvalidAttempt((count) => count + 1)
+      return
+    }
 
-    // Duplicate-email check only on the Personal step (email field), after local format validation.
+    // Duplicate-email check only on the Account step (email field), after local format validation.
     // Phone is never uniqueness-checked. No keystroke/debounce API calls.
-    if (step === 0) {
+    if (current.id === 'account') {
       const email = form.email.trim()
       if (emailAvailableRef.current !== email.toLowerCase()) {
         setCheckingEmail(true)
@@ -108,6 +144,7 @@ export function JoinPage() {
           const result = await authService.checkEmailAvailable(email)
           if (!result.available) {
             setEmailAvailabilityError(DUPLICATE_EMAIL_MESSAGE)
+            setInvalidAttempt((count) => count + 1)
             return
           }
           emailAvailableRef.current = email.toLowerCase()
@@ -126,29 +163,49 @@ export function JoinPage() {
 
     setFormError('')
     setEmailAvailabilityError('')
-    setErrors({})
-    setStep((currentStep) => Math.min(currentStep + 1, registerSteps.length - 1))
+    goToStep(Math.min(stepIndex + 1, flowSteps.length - 1))
+  }
+
+  function buildPendingAnswers() {
+    const profileQuestions = flowSteps.flatMap((item) => (isProfileStep(item.id) ? sections[item.id] : []))
+    const results = [
+      buildAccountAnswers(apiSteps ?? [], {
+        countryName: countryName(form.country),
+        dateOfBirthIso: dateOfBirthToIso(form.dateOfBirth),
+      }),
+      buildProfileAnswers(profileQuestions, form.answers),
+      buildConsentAnswers(apiSteps ?? [], {
+        emailInvitations: form.emailInvitations,
+        opportunityUpdates: form.opportunityUpdates,
+        memberUpdates: form.memberUpdates,
+        acceptTerms: form.acceptTerms,
+        researchInvitations: form.researchInvitations,
+        acceptPrivacy: form.acceptPrivacy,
+        newsConsent: form.newsConsent,
+      }),
+    ]
+    const unmapped = results.flatMap((result) => result.unmapped)
+    if (unmapped.length && import.meta.env.DEV) {
+      console.warn('[registration] The API has no question to store these answers yet:', unmapped)
+    }
+    return results.flatMap((result) => result.answers)
   }
 
   async function submitForm() {
-    const nextErrors = isLast ? validateRegisterForm(form, steps) : validateRegisterStep(form, step, steps)
+    if (submitting || checkingEmail) return
+    const nextErrors = validateRegisterForm(form, sections, flowSteps)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length) {
-      if (isLast) setStep(firstInvalidStep(form, steps))
+      const invalidIndex = firstInvalidStep(form, sections, flowSteps)
+      if (invalidIndex === stepIndex) setInvalidAttempt((count) => count + 1)
+      else setStepId(flowSteps[invalidIndex]?.id ?? 'account')
       return
     }
     setSubmitting(true)
     setFormError('')
     try {
       const outcome = await register(form)
-      savePendingOnboarding(
-        form.email,
-        buildOnboardingPayload(flattenQuestions(steps), form.answers, {
-          acceptTerms: form.acceptTerms,
-          acceptPrivacy: form.acceptPrivacy,
-          emailInvitations: form.emailInvitations,
-        }),
-      )
+      savePendingOnboarding(form.email, buildPendingAnswers())
       setEmailSent(outcome.emailSent)
       setEmailError(outcome.emailError ?? '')
       setSuccess(true)
@@ -159,7 +216,7 @@ export function JoinPage() {
         emailAvailableRef.current = ''
         setEmailAvailabilityError(DUPLICATE_EMAIL_MESSAGE)
         setFormError('')
-        setStep(0)
+        setStepId('account')
       } else {
         setFormError(requestError?.message ?? 'Something went wrong while creating your profile. Please try again.')
         if (requestError?.fieldErrors) {
@@ -173,17 +230,8 @@ export function JoinPage() {
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
-    if (!isLast) {
-      void goNext()
-      return
-    }
-    if (!formValid) {
-      const nextErrors = validateRegisterForm(form, steps)
-      setErrors(nextErrors)
-      setStep(firstInvalidStep(form, steps))
-      return
-    }
-    void submitForm()
+    if (isLast) void submitForm()
+    else void goNext()
   }
 
   const reassurance = useMemo(
@@ -207,96 +255,88 @@ export function JoinPage() {
     )
   }
 
+  const hasQuestions = Boolean(apiSteps?.length)
+
   return (
     <div className="bg-paper pb-16">
       <JoinHero />
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:items-start lg:px-8">
         <JoinSidebar />
-        <div>
+        <div className="min-w-0">
           {questionsState.loading ? <LoadingSkeleton rows={4} /> : null}
           {questionsState.error ? (
             <ErrorState message={questionsState.error} onRetry={questionsState.reload} />
           ) : null}
-          {!questionsState.loading && !questionsState.error && !steps.length ? (
+          {!questionsState.loading && !questionsState.error && !hasQuestions ? (
             <EmptyState title="Registration questions are unavailable right now." description="Please try again shortly." />
           ) : null}
-          {!questionsState.loading && !questionsState.error && steps.length ? (
-            <form className="overflow-hidden rounded-3xl border border-line bg-white p-5 shadow-card sm:p-8" onSubmit={onSubmit} noValidate>
-              <h2 className="font-display text-3xl text-ink sm:text-4xl">Create Your Consumer Profile</h2>
-              <p className="mt-2 text-sm leading-6 text-ink-soft">Tell us about yourself to receive relevant survey opportunities.</p>
+          {!questionsState.loading && !questionsState.error && hasQuestions ? (
+            <form ref={formRef} className="overflow-hidden rounded-3xl border border-line bg-white p-5 shadow-card sm:p-8" onSubmit={onSubmit} noValidate>
+              <h2 className="font-display text-3xl text-ink sm:text-4xl">Create Your Applause One Account</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">
+                Join our research community and receive survey opportunities that match your profile.
+              </p>
               <div>
                 <div className="mt-6">
-                <RegistrationProgress
-                  step={step}
-                  onSelect={(index) => {
-                    if (index <= step) {
-                      setErrors({})
-                      setStep(index)
-                    }
-                  }}
-                />
-              </div>
-              <div ref={stepSectionRef} className="mt-8 scroll-mt-24 border-t border-line pt-6">
-                <p className="text-sm text-muted">{current.copy}</p>
-                <h3 className="font-display mt-1 text-2xl text-ink">{current.heading}</h3>
-              </div>
-              {formError ? (
-                <div className="mt-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
-                  <p>{formError}</p>
-                  <button type="button" className="mt-2 font-medium underline" onClick={() => void submitForm()}>
-                    Try again
-                  </button>
+                  <RegistrationProgress steps={flowSteps} step={stepIndex} onSelect={(index) => index <= stepIndex && goToStep(index)} />
                 </div>
-              ) : null}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={step}
-                  initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -12 }}
-                  transition={{ duration }}
-                >
-                  {step === 5 ? (
-                    <ReviewStep form={form} steps={steps} />
-                  ) : step === 0 ? (
-                    <PersonalStep form={form} errors={shownErrors} update={update} />
-                  ) : step === 4 ? (
-                    <PrivacyStep form={form} errors={shownErrors} update={update} />
-                  ) : (
-                    <OnboardingFields
-                      questions={questionsForApiStep(steps, JOIN_API_STEPS[step - 1])}
-                      values={form.answers}
-                      errors={shownErrors}
-                      onChange={updateAnswer}
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
+                <div ref={stepSectionRef} className="mt-8 scroll-mt-24 border-t border-line pt-6">
+                  <p className="text-sm text-muted">{current.copy}</p>
+                  <h3 className="font-display mt-1 text-2xl text-ink">{current.heading}</h3>
+                </div>
+                {formError ? (
+                  <div className="mt-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
+                    <p>{formError}</p>
+                    <button type="button" className="mt-2 font-medium underline" onClick={() => void (isLast ? submitForm() : goNext())}>
+                      Try again
+                    </button>
+                  </div>
+                ) : null}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={current.id}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -12 }}
+                    transition={{ duration }}
+                  >
+                    {current.id === 'review' ? (
+                      <ReviewStep form={form} sections={sections} includeProfessional={includeProfessional} />
+                    ) : current.id === 'account' ? (
+                      <PersonalStep form={form} errors={shownErrors} update={update} />
+                    ) : current.id === 'privacy' ? (
+                      <PrivacyStep form={form} errors={shownErrors} update={update} />
+                    ) : (
+                      <OnboardingFields
+                        questions={sections[current.id]}
+                        values={form.answers}
+                        errors={shownErrors}
+                        onChange={updateAnswer}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </div>
               <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={step === 0 || submitting || checkingEmail}
-                  onClick={() => {
-                    setErrors({})
-                    setStep((currentStep) => currentStep - 1)
-                  }}
+                  disabled={stepIndex === 0 || submitting || checkingEmail}
+                  onClick={() => goToStep(stepIndex - 1)}
                 >
                   Back
                 </Button>
                 {isLast ? (
-                  <Button type="submit" disabled={submitting || checkingEmail || !formValid} className="sm:min-w-64">
+                  <Button type="submit" disabled={submitting || checkingEmail} className="sm:min-w-64">
                     {submitting ? 'Creating your profile…' : 'Complete Registration'}
                   </Button>
                 ) : (
-                  <Button
-                    type="button"
-                    disabled={!stepValid || checkingEmail || submitting}
-                    title={stepValid ? undefined : 'Complete all required fields to continue'}
-                    onClick={() => void goNext()}
-                  >
-                    {checkingEmail && step === 0 ? 'Checking email…' : 'Continue'}
+                  <Button type="button" disabled={checkingEmail || submitting} onClick={() => void goNext()}>
+                    {current.id === 'account'
+                      ? checkingEmail
+                        ? 'Checking email…'
+                        : 'Create Account & Continue'
+                      : 'Continue'}
                   </Button>
                 )}
               </div>

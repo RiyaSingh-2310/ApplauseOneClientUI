@@ -1,7 +1,8 @@
-import type { OnboardingQuestion, OnboardingStepGroup } from '@/types/api'
+import { DEFAULT_PHONE_COUNTRY, findCountry } from '@/content/countries'
+import { profileSectionCopy, type ProfileSectionId } from '@/content/profileQuestions'
 import type { RegisterPayload } from '@/types/auth'
-import { questionsForApiStep } from '@/lib/apiMap'
-import { asNumber } from '@/lib/utils'
+import { validateDateOfBirth } from './dateOfBirth'
+import { validateQuestions, type ProfileSections } from './profileQuestions'
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const NAME_PATTERN = /^[\p{L}][\p{L}\s'.-]*$/u
@@ -11,16 +12,39 @@ export const NAME_MAX_LENGTH = 30
 export const PHONE_MAX_DIGITS = 15
 export const ZIP_MAX_LENGTH = 10
 
-export const registerSteps = [
-  { id: 0, title: 'Personal', heading: 'Personal Information', copy: 'Your details and a secure password.' },
-  { id: 1, title: 'Demographics', heading: 'Demographics', copy: 'Help us match relevant consumer studies.' },
-  { id: 2, title: 'Lifestyle', heading: 'Shopping & Lifestyle', copy: 'Tell us how you shop and take surveys.' },
-  { id: 3, title: 'Preferences', heading: 'Survey Preferences', copy: 'How you like to participate.' },
-  { id: 4, title: 'Privacy', heading: 'Community & Privacy', copy: 'Communication choices and required consents.' },
-  { id: 5, title: 'Review', heading: 'Review your details', copy: 'Confirm everything looks right, then complete registration.' },
-] as const
+export type RegisterStepId = 'account' | ProfileSectionId | 'privacy' | 'review'
 
-export const JOIN_API_STEPS = [2, 3, 4] as const
+export interface RegisterStep {
+  id: RegisterStepId
+  title: string
+  heading: string
+  copy: string
+}
+
+export const registerSteps: RegisterStep[] = [
+  {
+    id: 'account',
+    title: 'Account',
+    heading: 'Account Information',
+    copy: 'Enter your basic details to create your Applause One account',
+  },
+  { id: 'demographics', ...profileSectionCopy.demographics },
+  { id: 'professional', ...profileSectionCopy.professional },
+  { id: 'lifestyle', ...profileSectionCopy.lifestyle },
+  { id: 'preferences', ...profileSectionCopy.preferences },
+  {
+    id: 'privacy',
+    title: 'Privacy',
+    heading: 'Community & Privacy',
+    copy: 'Choose how you would like to hear from us and review your privacy choices.',
+  },
+  { id: 'review', title: 'Review', heading: 'Review your details', copy: 'Confirm everything looks right, then complete registration.' },
+]
+
+/** The Professional Profile step only applies to working respondents. */
+export function activeRegisterSteps(includeProfessional: boolean) {
+  return registerSteps.filter((step) => step.id !== 'professional' || includeProfessional)
+}
 
 export const emptyRegisterForm: RegisterPayload = {
   email: '',
@@ -29,34 +53,18 @@ export const emptyRegisterForm: RegisterPayload = {
   firstName: '',
   lastName: '',
   phone: '',
+  phoneCountry: DEFAULT_PHONE_COUNTRY,
   zipCode: '',
+  country: '',
+  dateOfBirth: '',
   answers: {},
-  emailInvitations: true,
+  emailInvitations: false,
   opportunityUpdates: false,
-  earningTips: false,
+  memberUpdates: false,
   acceptTerms: false,
+  researchInvitations: false,
   acceptPrivacy: false,
-}
-
-function questionAnswered(question: OnboardingQuestion, value: string | string[] | undefined) {
-  if (question.field_type === 'checkbox') return Array.isArray(value) && value.length > 0
-  if (typeof value !== 'string') return false
-  const trimmed = value.trim()
-  return trimmed.length > 0
-}
-
-export function validateOnboardingQuestions(
-  questions: OnboardingQuestion[],
-  answers: Record<string, string | string[]>,
-) {
-  const errors: Record<string, string> = {}
-  for (const question of questions) {
-    if (!asNumber(question.is_required)) continue
-    if (!questionAnswered(question, answers[String(question.id)])) {
-      errors[`q-${question.id}`] = 'This answer is required.'
-    }
-  }
-  return errors
+  newsConsent: false,
 }
 
 export function validateNewPassword(password: string, confirmPassword: string) {
@@ -70,70 +78,73 @@ export function validateNewPassword(password: string, confirmPassword: string) {
   return errors
 }
 
-export function validateRegisterStep(
-  form: RegisterPayload,
-  step: number,
-  steps: OnboardingStepGroup[] = [],
-) {
+export function validatePhone(phoneCountry: string, phone: string) {
+  const digits = phone.trim()
+  if (!digits) return ''
+  if (!PHONE_PATTERN.test(digits)) return 'Enter 7 to 15 digits, with no letters or symbols.'
+  const country = findCountry(phoneCountry)
+  if (!country) return 'Select a country code.'
+  if (country.dial.length + digits.length > PHONE_MAX_DIGITS) {
+    return 'This number is too long for the selected country code.'
+  }
+  return ''
+}
+
+function validateAccount(form: RegisterPayload) {
   const errors: Record<string, string> = {}
-
-  if (step === 0) {
-    const firstName = form.firstName.trim()
-    const lastName = form.lastName.trim()
-    if (!firstName) errors.firstName = 'First name is required.'
-    else if (firstName.length > NAME_MAX_LENGTH) errors.firstName = 'First name must be 30 characters or fewer.'
-    else if (!NAME_PATTERN.test(firstName)) errors.firstName = 'Enter a valid first name.'
-    if (!lastName) errors.lastName = 'Last name is required.'
-    else if (lastName.length > NAME_MAX_LENGTH) errors.lastName = 'Last name must be 30 characters or fewer.'
-    else if (!NAME_PATTERN.test(lastName)) errors.lastName = 'Enter a valid last name.'
-    if (!EMAIL_PATTERN.test(form.email.trim())) errors.email = 'Enter a valid email address.'
-    if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
-      errors.phone = 'Enter 7 to 15 digits, with no letters or symbols.'
-    }
-    if (form.zipCode.trim() && !ZIP_PATTERN.test(form.zipCode.trim())) {
-      errors.zipCode = 'Enter a valid ZIP or postal code.'
-    }
-    Object.assign(errors, validateNewPassword(form.password, form.confirmPassword))
+  const firstName = form.firstName.trim()
+  const lastName = form.lastName.trim()
+  if (!firstName) errors.firstName = 'First name is required.'
+  else if (firstName.length > NAME_MAX_LENGTH) errors.firstName = 'First name must be 30 characters or fewer.'
+  else if (!NAME_PATTERN.test(firstName)) errors.firstName = 'Enter a valid first name.'
+  if (!lastName) errors.lastName = 'Last name is required.'
+  else if (lastName.length > NAME_MAX_LENGTH) errors.lastName = 'Last name must be 30 characters or fewer.'
+  else if (!NAME_PATTERN.test(lastName)) errors.lastName = 'Enter a valid last name.'
+  if (!EMAIL_PATTERN.test(form.email.trim())) errors.email = 'Enter a valid email address.'
+  const phoneError = validatePhone(form.phoneCountry, form.phone)
+  if (phoneError) errors.phone = phoneError
+  if (!findCountry(form.country)) errors.country = 'Please select your country of residence.'
+  const dateOfBirthError = validateDateOfBirth(form.dateOfBirth)
+  if (dateOfBirthError) errors.dateOfBirth = dateOfBirthError
+  if (form.zipCode.trim() && !ZIP_PATTERN.test(form.zipCode.trim())) {
+    errors.zipCode = 'Enter a valid ZIP or postal code.'
   }
-
-  if (step === 1 || step === 2 || step === 3) {
-    const apiStep = JOIN_API_STEPS[step - 1]
-    Object.assign(errors, validateOnboardingQuestions(questionsForApiStep(steps, apiStep), form.answers))
-  }
-
-  if (step === 4 || step === 5) {
-    if (!form.acceptTerms) errors.acceptTerms = 'Please agree to the terms.'
-    if (!form.acceptPrivacy) errors.acceptPrivacy = 'Privacy consent is required.'
-  }
-
+  Object.assign(errors, validateNewPassword(form.password, form.confirmPassword))
   return errors
 }
 
-export function isRegisterStepValid(
-  form: RegisterPayload,
-  step: number,
-  steps: OnboardingStepGroup[] = [],
-) {
-  return Object.keys(validateRegisterStep(form, step, steps)).length === 0
+function validatePrivacy(form: RegisterPayload) {
+  const errors: Record<string, string> = {}
+  if (!form.acceptTerms) errors.acceptTerms = 'Please agree to the Terms of Use and Privacy Policy to continue.'
+  if (!form.acceptPrivacy) errors.acceptPrivacy = 'Please give your privacy consent to continue.'
+  return errors
 }
 
-export function isRegisterFormValid(form: RegisterPayload, steps: OnboardingStepGroup[] = []) {
-  return Object.keys(validateRegisterForm(form, steps)).length === 0
-}
-
-export function validateRegisterForm(form: RegisterPayload, steps: OnboardingStepGroup[] = []) {
-  return {
-    ...validateRegisterStep(form, 0, steps),
-    ...validateRegisterStep(form, 1, steps),
-    ...validateRegisterStep(form, 2, steps),
-    ...validateRegisterStep(form, 3, steps),
-    ...validateRegisterStep(form, 4, steps),
+export function validateRegisterStep(form: RegisterPayload, stepId: RegisterStepId, sections: ProfileSections) {
+  switch (stepId) {
+    case 'account':
+      return validateAccount(form)
+    case 'demographics':
+    case 'professional':
+    case 'lifestyle':
+    case 'preferences':
+      return validateQuestions(sections[stepId], form.answers)
+    case 'privacy':
+      return validatePrivacy(form)
+    case 'review':
+      return {}
   }
 }
 
-export function firstInvalidStep(form: RegisterPayload, steps: OnboardingStepGroup[] = []) {
-  for (const step of [0, 1, 2, 3, 4] as const) {
-    if (Object.keys(validateRegisterStep(form, step, steps)).length) return step
-  }
-  return 5
+/** Validates every active step; skipped steps (e.g. Professional Profile) are never required. */
+export function validateRegisterForm(form: RegisterPayload, sections: ProfileSections, steps: RegisterStep[]) {
+  return steps.reduce<Record<string, string>>(
+    (errors, step) => ({ ...errors, ...validateRegisterStep(form, step.id, sections) }),
+    {},
+  )
+}
+
+export function firstInvalidStep(form: RegisterPayload, sections: ProfileSections, steps: RegisterStep[]) {
+  const index = steps.findIndex((step) => Object.keys(validateRegisterStep(form, step.id, sections)).length > 0)
+  return index === -1 ? steps.length - 1 : index
 }

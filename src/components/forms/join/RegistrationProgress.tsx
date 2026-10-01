@@ -1,54 +1,67 @@
-import { registerSteps } from '@/lib/validation'
+import type { RegisterStep } from '@/lib/validation'
 import { cn } from '@/lib/utils'
 
 export function RegistrationProgress({
+  steps,
   step,
   onSelect,
 }: {
+  steps: RegisterStep[]
   step: number
   onSelect: (index: number) => void
 }) {
-  const progress = ((step + 1) / registerSteps.length) * 100
+  const progress = ((step + 1) / steps.length) * 100
+  const current = steps[step]
 
   return (
     <div>
       <div className="h-1.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
         <div className="h-full rounded-full bg-teal transition-[width] duration-300" style={{ width: `${progress}%` }} />
       </div>
-      <ol className="mt-4 grid grid-cols-6 gap-1 sm:gap-2" aria-label="Registration progress, 6 steps">
-        {registerSteps.map((item) => {
-          const current = item.id === step
-          const complete = item.id < step
+      <ol
+        className="mt-4 grid gap-1 sm:gap-2"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+        aria-label={`Registration progress, ${steps.length} steps`}
+      >
+        {steps.map((item, index) => {
+          const isCurrent = index === step
+          const complete = index < step
           return (
-            <li key={item.id}>
+            <li key={item.id} className="min-w-0">
               <button
                 type="button"
-                onClick={() => onSelect(item.id)}
-                disabled={item.id > step}
+                onClick={() => onSelect(index)}
+                disabled={index > step}
+                aria-label={`Step ${index + 1} of ${steps.length}: ${item.title}${complete ? ' (completed)' : ''}`}
                 className={cn(
-                  'flex w-full flex-col items-center gap-1 rounded-xl px-0.5 py-1 text-center text-[10px] sm:px-1 sm:text-xs',
-                  current && 'font-semibold text-teal',
+                  'flex w-full flex-col items-center gap-1 rounded-xl px-0.5 py-1 text-center text-[11px] sm:px-1 md:text-xs',
+                  isCurrent && 'font-semibold text-teal',
                   complete && 'text-ink',
-                  !current && !complete && 'text-muted',
+                  !isCurrent && !complete && 'text-muted',
                 )}
-                aria-current={current ? 'step' : undefined}
+                aria-current={isCurrent ? 'step' : undefined}
               >
                 <span
                   className={cn(
                     'grid size-7 place-items-center rounded-full border text-[11px]',
-                    current && 'border-teal bg-teal text-white',
+                    isCurrent && 'border-teal bg-teal text-white',
                     complete && 'border-teal bg-teal-soft text-teal',
-                    !current && !complete && 'border-line bg-white',
+                    !isCurrent && !complete && 'border-line bg-white',
                   )}
                 >
-                  {item.id + 1}
+                  {index + 1}
                 </span>
-                <span className="leading-tight">{item.title}</span>
+                <span className="hidden max-w-full leading-tight break-words sm:block">{item.title}</span>
               </button>
             </li>
           )
         })}
       </ol>
+      {current ? (
+        <p className="mt-2 text-center text-xs font-medium text-teal sm:hidden" aria-hidden="true">
+          Step {step + 1} of {steps.length}: {current.title}
+        </p>
+      ) : null}
     </div>
   )
 }

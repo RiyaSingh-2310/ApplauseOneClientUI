@@ -1,9 +1,9 @@
-import { Clock, Gift, Wallet } from 'lucide-react'
+import { Clock, Gift, Target } from 'lucide-react'
 import { motion } from 'motion/react'
-import { joinHighlights, joinIncentive } from '@/config/brand'
+import { joinHero } from '@/config/brand'
 import { useMotionConfig } from '@/lib/motion'
 
-const highlightIcons = [Wallet, Clock, Gift]
+const highlightIcons = [Target, Clock, Gift]
 
 export function JoinHero() {
   const { duration } = useMotionConfig()
@@ -21,26 +21,22 @@ export function JoinHero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration }}
       >
-        <p className="text-xs font-semibold tracking-[0.22em] text-gold uppercase">Consumer research panel</p>
-        <h1 className="font-display mt-4 text-4xl leading-tight text-white text-balance sm:text-5xl">
-          Join the Consumer Research Panel
-        </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">
-          Share your opinions on everyday products and services while earning rewards for your valuable insights.
-        </p>
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {joinHighlights.map((item, index) => {
+        <p className="text-xs font-semibold tracking-[0.22em] text-gold uppercase">{joinHero.eyebrow}</p>
+        <h1 className="font-display mt-4 text-4xl leading-tight text-white text-balance sm:text-5xl">{joinHero.title}</h1>
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">{joinHero.body}</p>
+        <ol className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {joinHero.highlights.map((item, index) => {
             const Icon = highlightIcons[index] ?? Gift
             return (
-              <div key={item.label} className="text-center">
-                <Icon className="mx-auto size-6 text-gold" />
-                <p className="font-display mt-2 text-3xl text-white sm:text-4xl">{item.value}</p>
-                <p className="mt-1 text-sm text-white/70">{item.label}</p>
-              </div>
+              <li key={item.title} className="text-center">
+                <Icon className="mx-auto size-6 text-gold" aria-hidden="true" />
+                <p className="font-display mt-2 text-2xl leading-tight text-white text-balance sm:text-[1.65rem]">{item.title}</p>
+                <p className="mt-1 text-sm text-white/70">{item.copy}</p>
+              </li>
             )
           })}
-        </div>
-        <p className="mx-auto mt-6 max-w-xl text-xs leading-5 text-white/55">{joinIncentive.disclaimer}</p>
+        </ol>
+        <p className="mx-auto mt-8 max-w-xl text-xs leading-5 text-white/55">{joinHero.disclaimer}</p>
       </motion.div>
     </section>
   )

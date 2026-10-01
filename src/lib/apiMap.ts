@@ -1,7 +1,6 @@
 import type {
   DropdownOption,
   OnboardingAnswer,
-  OnboardingAnswerInput,
   OnboardingQuestion,
   OnboardingStepGroup,
   PaymentMethod,
@@ -41,55 +40,10 @@ export function findYesNoId(question: OnboardingQuestion, yes: boolean) {
   return question.options.find((option) => option.name.trim().toLowerCase() === wanted)?.id
 }
 
-export function answersToValues(answers: OnboardingAnswer[]) {
-  const values: Record<string, string | string[]> = {}
-  for (const answer of answers) {
-    const key = String(answer.question_id)
-    const ref = String(answer.answer_ref_id ?? '')
-    if (!ref) continue
-    if (answer.field_type === 'checkbox') {
-      const current = values[key]
-      values[key] = Array.isArray(current) ? [...current, ref] : [ref]
-    } else {
-      values[key] = ref
-    }
-  }
-  return values
-}
-
 export function displayAnswer(answers: OnboardingAnswer[], questionId: number) {
   const matched = answers.filter((answer) => asNumber(answer.question_id) === questionId)
   if (!matched.length) return ''
   return matched.map((answer) => answer.answer_text).filter(Boolean).join(', ')
-}
-
-export function buildOnboardingPayload(
-  questions: OnboardingQuestion[],
-  values: Record<string, string | string[]>,
-  consents: { acceptTerms: boolean; acceptPrivacy: boolean; emailInvitations: boolean },
-): OnboardingAnswerInput[] {
-  const payload: OnboardingAnswerInput[] = []
-
-  for (const question of questions) {
-    if (question.step_no === 5) {
-      const yes = question.id === 11 ? consents.emailInvitations : question.id === 10 ? consents.acceptPrivacy : consents.acceptTerms
-      const optionId = findYesNoId(question, yes)
-      if (optionId != null) payload.push({ question_id: question.id, answer_ref_id: optionId })
-      continue
-    }
-
-    const value = values[String(question.id)]
-    if (question.field_type === 'checkbox') {
-      const ids = Array.isArray(value) ? value.map((item) => asNumber(item)).filter(Boolean) : []
-      if (ids.length) payload.push({ question_id: question.id, answer_ref_ids: ids })
-      continue
-    }
-
-    const id = typeof value === 'string' ? asNumber(value) : 0
-    if (id) payload.push({ question_id: question.id, answer_ref_id: id })
-  }
-
-  return payload
 }
 
 export function unwrapCollection<T>(payload: unknown, keys: string[]): T[] {

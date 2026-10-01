@@ -1,8 +1,68 @@
+import type { ReactNode } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { asNumber } from '@/lib/utils'
-import type { OnboardingQuestion } from '@/types/api'
+import type { AnswerValue, AnswerValues, FormOption, FormQuestion } from '@/lib/profileQuestions'
+import { cn } from '@/lib/utils'
+
+function fieldId(question: FormQuestion) {
+  return `q-${question.key.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+}
+
+function ChoiceGroup({
+  id,
+  label,
+  required,
+  hint,
+  error,
+  children,
+}: {
+  id: string
+  label: string
+  required: boolean
+  hint?: string
+  error?: string
+  children: ReactNode
+}) {
+  const describedBy = [hint ? `${id}-hint` : '', error ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined
+  return (
+    <fieldset id={id} aria-describedby={describedBy} className="space-y-2">
+      <legend className="mb-2 text-sm font-medium text-ink-soft">
+        {label}
+        {required ? (
+          <>
+            <span className="ml-1 text-danger" aria-hidden="true">
+              *
+            </span>
+            <span className="sr-only"> (required)</span>
+          </>
+        ) : null}
+      </legend>
+      {hint ? (
+        <p id={`${id}-hint`} className="text-xs text-muted">
+          {hint}
+        </p>
+      ) : null}
+      {children}
+      {error ? (
+        <p id={`${id}-error`} className="text-xs text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </fieldset>
+  )
+}
+
+function toggleOption(options: FormOption[], selected: string[], option: FormOption) {
+  if (selected.includes(option.value)) return selected.filter((item) => item !== option.value)
+  if (option.exclusive) return [option.value]
+  const exclusive = new Set(options.filter((item) => item.exclusive).map((item) => item.value))
+  return [...selected.filter((item) => !exclusive.has(item)), option.value]
+}
+
+const optionClass =
+  'flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border bg-white px-3 py-2.5 text-sm leading-5 text-ink transition-colors hover:border-teal/50'
 
 export function OnboardingFields({
   questions,
@@ -10,100 +70,94 @@ export function OnboardingFields({
   errors,
   onChange,
 }: {
-  questions: OnboardingQuestion[]
-  values: Record<string, string | string[]>
+  questions: FormQuestion[]
+  values: AnswerValues
   errors: Record<string, string>
-  onChange: (questionId: number, value: string | string[]) => void
+  onChange: (key: string, value: AnswerValue) => void
 }) {
   return (
-    <div className="mt-6 grid gap-5">
+    <div className="mt-6 grid gap-6">
       {questions.map((question) => {
-        const key = String(question.id)
-        const error = errors[`q-${question.id}`]
-        const value = values[key]
-        const options = (question.options ?? []).map((option) => ({
-          value: String(option.id),
-          label: option.name,
-        }))
+        const id = fieldId(question)
+        const error = errors[`q-${question.key}`]
+        const value = values[question.key]
 
-        if (question.field_type === 'dropdown') {
+        if (question.fieldType === 'text') {
           return (
-            <Field
-              key={question.id}
-              label={question.question_text}
-              htmlFor={`q-${question.id}`}
-              required={Boolean(asNumber(question.is_required))}
-              error={error}
-            >
-              <Select
-                id={`q-${question.id}`}
+            <Field key={question.key} label={question.label} htmlFor={id} required={question.required} error={error} hint={question.hint}>
+              <Input
+                id={id}
+                placeholder={question.placeholder}
+                maxLength={question.maxLength}
+                aria-required={question.required || undefined}
                 value={typeof value === 'string' ? value : ''}
-                placeholder="Select an option"
-                options={options}
-                aria-invalid={Boolean(error)}
-                onChange={(event) => onChange(question.id, event.target.value)}
+                onChange={(event) => onChange(question.key, event.target.value)}
               />
             </Field>
           )
         }
 
-        if (question.field_type === 'checkbox') {
-          const selected = Array.isArray(value) ? value : []
+        if (question.fieldType === 'dropdown') {
           return (
-            <Field
-              key={question.id}
-              label={question.question_text}
-              required={Boolean(asNumber(question.is_required))}
-              error={error}
-            >
-              <div className="grid gap-2 sm:grid-cols-2">
-                {options.map((option) => (
-                  <label key={option.value} className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2 text-sm">
-                    <Checkbox
-                      checked={selected.includes(option.value)}
-                      onCheckedChange={() => {
-                        onChange(
-                          question.id,
-                          selected.includes(option.value)
-                            ? selected.filter((item) => item !== option.value)
-                            : [...selected, option.value],
-                        )
-                      }}
-                    />
-                    {option.label}
-                  </label>
-                ))}
-              </div>
+            <Field key={question.key} label={question.label} htmlFor={id} required={question.required} error={error} hint={question.hint}>
+              <Select
+                id={id}
+                value={typeof value === 'string' ? value : ''}
+                placeholder="Select an option"
+                options={question.options}
+                aria-required={question.required || undefined}
+                onChange={(event) => onChange(question.key, event.target.value)}
+              />
             </Field>
           )
         }
 
+        if (question.fieldType === 'checkbox') {
+          const selected = Array.isArray(value) ? value : []
+          return (
+            <ChoiceGroup key={question.key} id={id} label={question.label} required={question.required} hint={question.hint} error={error}>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {question.options.map((option) => {
+                  const checked = selected.includes(option.value)
+                  return (
+                    <label key={option.value} className={cn(optionClass, checked ? 'border-teal bg-teal-soft/50' : 'border-line')}>
+                      <Checkbox
+                        checked={checked}
+                        aria-invalid={Boolean(error) || undefined}
+                        onCheckedChange={() => onChange(question.key, toggleOption(question.options, selected, option))}
+                      />
+                      <span className="min-w-0 flex-1">{option.label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </ChoiceGroup>
+          )
+        }
+
         return (
-          <Field
-            key={question.id}
-            label={question.question_text}
-            required={Boolean(asNumber(question.is_required))}
-            error={error}
-          >
+          <ChoiceGroup key={question.key} id={id} label={question.label} required={question.required} hint={question.hint} error={error}>
             <div className="grid gap-2 sm:grid-cols-2">
-              {options.map((option) => (
-                <label
-                  key={option.value}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink"
-                >
-                  <input
-                    type="radio"
-                    className="size-4 shrink-0 accent-teal"
-                    name={`q-${question.id}`}
-                    value={option.value}
-                    checked={value === option.value}
-                    onChange={() => onChange(question.id, option.value)}
-                  />
-                  {option.label}
-                </label>
-              ))}
+              {question.options.map((option) => {
+                const checked = value === option.value
+                return (
+                  <label key={option.value} className={cn(optionClass, 'rounded-2xl', checked ? 'border-teal bg-teal-soft/50' : 'border-line')}>
+                    <input
+                      type="radio"
+                      className="mt-0.5 size-4 shrink-0 accent-teal"
+                      name={id}
+                      value={option.value}
+                      checked={checked}
+                      required={question.required}
+                      aria-invalid={Boolean(error) || undefined}
+                      onChange={() => onChange(question.key, option.value)}
+                    />
+                    <span className="min-w-0 flex-1">{option.label}</span>
+                  </label>
+                )
+              })}
             </div>
-          </Field>
+          </ChoiceGroup>
         )
       })}
     </div>
